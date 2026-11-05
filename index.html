@@ -77,10 +77,112 @@
     body.drm-blackout #pdf-container,
     body.drm-blackout .task-canvas-wrapper,
     body.drm-blackout #task-modal,
-    body.drm-blackout #ui-layer {
+    body.drm-blackout #ui-layer,
+    body.drm-blackout #student-share-panel {
         filter: blur(50px) brightness(0) !important;
         visibility: hidden !important;
         opacity: 0 !important;
+    }
+    /* --- STUDENT PRESERVED VIRAL SHARING PANEL --- */
+    #student-share-panel {
+        position: fixed;
+        background: #ffffff;
+        border: 2px solid var(--color-attention-med);
+        box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+        z-index: 215;
+        display: flex;
+        flex-direction: column;
+        padding: 8px 10px;
+        box-sizing: border-box;
+    }
+    .share-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 4px;
+    }
+    .share-panel-title {
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .share-panel-body {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        flex: 1;
+        gap: 8px;
+    }
+    #student-qr-container {
+        background: white;
+        padding: 3px;
+        border: 1.5px solid var(--color-attention-med);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    #student-qr-container img, #student-qr-container canvas {
+        max-width: 100%;
+        max-height: 100%;
+        display: block;
+    }
+    .share-panel-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        gap: 3px;
+    }
+    /* Mobile: 1/3 screen preserved for sharing */
+    @media (max-width: 767px) {
+        #student-share-panel {
+            top: 0; left: 0; width: 100%;
+            height: 32vh; min-height: 160px; max-height: 220px;
+            border-radius: 0 0 16px 16px;
+            border-top: none;
+        }
+        #student-qr-container {
+            width: 95px; height: 95px;
+        }
+        body.student-connected #ui-layer {
+            top: 32vh;
+            height: 68vh;
+            padding: 8px;
+        }
+        body.student-connected #pdf-container {
+            margin-top: 32vh;
+            height: calc(100dvh - 32vh - var(--toolbar-size));
+        }
+    }
+    /* Desktop / Tablet: Preserved in Top-Left Corner */
+    @media (min-width: 768px) {
+        #student-share-panel {
+            top: 14px; left: 14px;
+            width: 220px; height: auto;
+            border-radius: 14px;
+        }
+        .share-panel-body {
+            flex-direction: column;
+            gap: 6px;
+        }
+        #student-qr-container {
+            width: 115px; height: 115px;
+        }
+        body.student-connected #ui-layer {
+            padding-left: 240px;
+        }
+    }
+    body.fullscreen-mode #student-share-panel {
+        display: none !important;
     }
     /* --- UI OVERLAYS --- */
     #ui-layer {
@@ -177,6 +279,15 @@
     .icon-btn i { width: 16px; height: 16px; }
     .btn-success { background: #e8f5e9; color: var(--color-success); border-color: var(--color-success); }
     .btn-approve { background: #e8f5e9; color: var(--color-success); border-color: var(--color-success); font-weight: 700; }
+    .btn-danger-action {
+        background: #fff5f5 !important;
+        color: var(--color-error) !important;
+        border-color: #fca5a5 !important;
+    }
+    .btn-danger-action:hover {
+        background: #fee2e2 !important;
+        color: #991b1b !important;
+    }
     input[type="text"], input[type="password"], input[type="tel"], select, textarea {
         padding: 0.55rem; 
         width: 100%; background: #fff; 
@@ -429,7 +540,7 @@
         width: 100%;
         pointer-events: none;
     }
-    /* --- DESKTOP ADAPTATION (WIDESCREEN NO VERTICAL SCROLL ON LEFT) --- */
+    /* --- DESKTOP ADAPTATION --- */
     @media (min-width: 900px) {
         #ui-layer { padding: 20px; }
         #role-menu {
@@ -463,7 +574,7 @@
         .speaker-left-col {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
             height: 100%;
             overflow: hidden; 
             padding-right: 2px;
@@ -561,7 +672,7 @@
         background:white; padding:4px; display:inline-flex; 
         align-items: center; justify-content: center;
         border: 2px solid var(--color-attention-med); border-radius: 10px;
-        flex-shrink: 1; max-height: 18vh; aspect-ratio: 1/1;
+        flex-shrink: 1; max-height: 15vh; aspect-ratio: 1/1;
     }
     #qr-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
     /* --- PDF VIEWER --- */
@@ -716,6 +827,31 @@
     <button class="btn-primary" style="max-width: 280px;" onclick="dismissDrmCurtain()">
         ПОВЕРНУТИСЯ ДО ТЕСТУ
     </button>
+</div>
+<!-- PRESERVED STUDENT VIRAL SHARING PANEL (1/3 SCREEN MOBILE, TOP-LEFT DESKTOP) -->
+<div id="student-share-panel" class="hidden">
+    <div class="share-panel-header">
+        <span class="share-panel-title">
+            <i data-lucide="share-2" style="width:14px;height:14px;color:var(--color-attention-med);"></i>
+            Швидке приєднання
+        </span>
+        <span class="badge badge-ok" style="font-size: 0.65rem;">Іспит Онлайн</span>
+    </div>
+    <div class="share-panel-body">
+        <div id="student-qr-container"></div>
+        <div class="share-panel-info">
+            <span class="id-label" style="font-size:0.65rem;">Код сесії:</span>
+            <div id="student-share-id-display" class="id-display" style="font-size: 1.05rem; padding: 2px 6px; letter-spacing: 1px;">...</div>
+            <div class="icon-btn-group" style="margin-top: 4px; gap: 4px; width: 100%;">
+                <button class="icon-btn" id="btn-st-copy-id" style="flex:1; justify-content:center; padding: 4px 6px; font-size:0.72rem;" onclick="copyId()">
+                    <i data-lucide="copy" style="width:13px;height:13px;"></i> Копія
+                </button>
+                <button class="icon-btn" style="flex:1; justify-content:center; padding: 4px 6px; font-size:0.72rem;" onclick="shareId()">
+                    <i data-lucide="share-2" style="width:13px;height:13px;"></i> Надіслати
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 <div id="ui-layer">
     <div id="role-menu">
@@ -875,21 +1011,33 @@
                     </div>
                 </div>
                 <!-- 20-SEC TIMER SWITCHER -->
-                <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 6px 10px; border-radius: 8px; margin-top: 4px;">
-                    <span style="font-size: 0.75rem; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
-                        <i data-lucide="timer" style="width:15px;height:15px;color:var(--color-attention-med);"></i>
+                <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 5px 8px; border-radius: 8px; margin-top: 2px;">
+                    <span style="font-size: 0.73rem; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="timer" style="width:14px;height:14px;color:var(--color-attention-med);"></i>
                         Автотаймер 20с:
                     </span>
-                    <label style="position: relative; display: inline-block; width: 38px; height: 20px; margin: 0; cursor: pointer;">
+                    <label style="position: relative; display: inline-block; width: 36px; height: 18px; margin: 0; cursor: pointer;">
                         <input type="checkbox" id="timer-toggle-cb" checked onchange="toggleAutoTimer(this.checked)" style="opacity: 0; width: 0; height: 0;">
                         <span id="timer-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--color-attention-med); transition: .2s; border-radius: 20px;"></span>
-                        <span id="timer-knob" style="position: absolute; height: 14px; width: 14px; left: 21px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%;"></span>
+                        <span id="timer-knob" style="position: absolute; height: 12px; width: 12px; left: 20px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%;"></span>
                     </label>
                 </div>
-                <div style="width: 100%; margin-top: 4px;">
-                    <label style="font-size: 0.75rem; font-weight: 700; color: #444; display: block; margin-bottom: 4px;">Загальні матеріали (PDF / Презентація):</label>
+                <!-- MULTI-ACTIVATION TOGGLE SWITCHER (DEFAULT: SINGLE ACTIVE) -->
+                <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 5px 8px; border-radius: 8px;">
+                    <span style="font-size: 0.73rem; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="layers" style="width:14px;height:14px;color:var(--color-attention-med);"></i>
+                        Одночасно декілька:
+                    </span>
+                    <label style="position: relative; display: inline-block; width: 36px; height: 18px; margin: 0; cursor: pointer;">
+                        <input type="checkbox" id="multi-active-cb" onchange="toggleMultiActive(this.checked)" style="opacity: 0; width: 0; height: 0;">
+                        <span id="multi-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .2s; border-radius: 20px;"></span>
+                        <span id="multi-knob" style="position: absolute; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%;"></span>
+                    </label>
+                </div>
+                <div style="width: 100%; margin-top: 2px;">
+                    <label style="font-size: 0.73rem; font-weight: 700; color: #444; display: block; margin-bottom: 2px;">Загальні матеріали (PDF / Презентація):</label>
                     <input type="text" id="gdrive-input" oninput="resetInputColor()" placeholder="URL завдань (PDF / Google Docs / Slides)">
-                    <div id="sync-status" style="display:none; color: var(--color-attention-high); font-weight:700; font-size: 0.8rem; margin-top: 4px;">
+                    <div id="sync-status" style="display:none; color: var(--color-attention-high); font-weight:700; font-size: 0.75rem; margin-top: 2px;">
                         <i data-lucide="loader-2" class="spin"></i> Завантаження...
                     </div>
                 </div>
@@ -919,6 +1067,10 @@
                             </button>
                             <button class="icon-btn" onclick="activateAllTasks(true)"><i data-lucide="play"></i> Всім</button>
                             <button class="icon-btn" onclick="activateAllTasks(false)"><i data-lucide="square"></i> Зупинити всі</button>
+                            <!-- DELETE ALL CARDS BUTTON -->
+                            <button class="icon-btn btn-danger-action" onclick="deleteAllCards()" title="Видалити всіх студентів та очистити матрицю">
+                                <i data-lucide="trash-2"></i> Видалити всіх
+                            </button>
                         </div>
                     </div>
                     <div class="matrix-grid" id="teacher-matrix-grid">
@@ -1107,8 +1259,9 @@
     let myStudentName = "";
     let myIndividualTask = "";
     let isMyTaskActive = false;
-    // AUTO-TIMER 20s STATE
+    // AUTO-TIMER 20s & MULTIPLE ACTIVATION SWITCHER STATES
     let autoTimerEnabled = true;
+    let allowMultipleActive = false; // By default: teacher can activate only one student
     let cardTimers = {}; // cardId -> { remaining: number, interval: id }
     let studentCountdownInterval = null;
     const lockDigits = [0,0,0,0,0,0,0,0,0];
@@ -1127,7 +1280,7 @@
                         id: item.id || ('st_' + Date.now() + '_' + idx),
                         name: item.name || '',
                         task: item.task || '',
-                        active: false // Safety default
+                        active: false
                     }));
                     syncCardStateToGlobals();
                 }
@@ -1209,7 +1362,6 @@
                 if (sel && sel.removeAllRanges) sel.removeAllRanges();
             }
         });
-        // Instant intercept on Capture phase for Snipping and Screenshot keys
         const interceptKey = (e) => {
             if (isLeader || !isStudentActive()) return;
             const key = (e.key || '').toLowerCase();
@@ -1233,7 +1385,6 @@
         };
         window.addEventListener('keydown', interceptKey, true);
         window.addEventListener('keyup', interceptKey, true);
-        // Instant Blackout on Blur / Loss of Window Focus (Blocks Windows Snipping Tool & Mac screenshot)
         window.addEventListener('blur', () => {
             if (isStudentActive()) {
                 scrubClipboard();
@@ -1259,7 +1410,6 @@
             triggerDrmCurtain("Друк матеріалів іспиту суворо заборонено!");
             reportViolation("Спроба друку");
         });
-        // Periodic clipboard protection
         setInterval(() => {
             if (isStudentActive()) scrubClipboard();
         }, 3000);
@@ -1381,10 +1531,8 @@
         canvas.style.width = displayWidth + 'px';
         canvas.style.height = totalHeight + 'px';
         ctx.scale(dpr, dpr);
-        // Security background with micro-noise texture (Anti-OCR protection)
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, displayWidth, totalHeight);
-        // Micro watermark on canvas
         ctx.save();
         ctx.rotate(-12 * Math.PI / 180);
         ctx.font = "700 11px 'Montserrat', sans-serif";
@@ -1395,7 +1543,6 @@
             }
         }
         ctx.restore();
-        // Question Raster Text
         ctx.fillStyle = '#0f172a';
         ctx.font = `600 ${baseFontSize}px 'Montserrat', sans-serif`;
         ctx.textAlign = 'left';
@@ -1443,17 +1590,41 @@
             setTimeout(() => document.getElementById('teacher-pwd').classList.remove('input-error'), 1000);
         }
     }
-    // --- 20-SEC TIMER MANAGEMENT ---
+    // --- AUTO-TIMER 20s & MULTIPLE ACTIVATION SWITCHER ---
     function toggleAutoTimer(enabled) {
         autoTimerEnabled = enabled;
         const knob = document.getElementById('timer-knob');
         const slider = document.getElementById('timer-slider');
         if (knob && slider) {
             slider.style.backgroundColor = enabled ? 'var(--color-attention-med)' : '#cbd5e1';
-            knob.style.left = enabled ? '21px' : '3px';
+            knob.style.left = enabled ? '20px' : '3px';
         }
         if (!enabled) {
             Object.keys(cardTimers).forEach(id => clearCardTimer(id));
+            renderTeacherMatrix();
+        }
+    }
+    function toggleMultiActive(enabled) {
+        allowMultipleActive = enabled;
+        const knob = document.getElementById('multi-knob');
+        const slider = document.getElementById('multi-slider');
+        if (knob && slider) {
+            slider.style.backgroundColor = enabled ? 'var(--color-attention-med)' : '#cbd5e1';
+            knob.style.left = enabled ? '20px' : '3px';
+        }
+        if (!enabled) {
+            // Keep at most only the first currently active card
+            let keptOne = false;
+            studentCards.forEach(c => {
+                if (c.active) {
+                    if (!keptOne) {
+                        keptOne = true;
+                    } else {
+                        deactivateSingleCard(c);
+                    }
+                }
+            });
+            localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
             renderTeacherMatrix();
         }
     }
@@ -1539,6 +1710,27 @@
         broadcastStudentList();
         renderTeacherMatrix();
     }
+    // DELETE ALL CARDS ACTION
+    function deleteAllCards() {
+        if (studentCards.length === 0) return;
+        if (!confirm("Ви впевнені, що хочете видалити ВСІ картки студентів?")) return;
+        studentCards.forEach(c => {
+            clearCardTimer(c.id);
+            const stName = c.name.trim();
+            if (c.active && stName) {
+                sendTaskToStudent(stName, null);
+            }
+        });
+        studentCards = [];
+        studentClaims = {};
+        studentViolations = {};
+        activeStudentTasks = {};
+        studentTasks = {};
+        syncCardStateToGlobals();
+        broadcastStudentList();
+        renderTeacherMatrix();
+        showNotification("Всі картки студентів видалено.", false);
+    }
     function updateCardName(id, newName) {
         const card = studentCards.find(c => c.id === id);
         if (!card) return;
@@ -1578,12 +1770,26 @@
         if (card.active) {
             deactivateSingleCard(card);
         } else {
+            // IF MULTIPLE ACTIVE IS DISABLED: DEACTIVATE ALL OTHER CARDS FIRST
+            if (!allowMultipleActive) {
+                studentCards.forEach(c => {
+                    if (c.id !== card.id && c.active) {
+                        deactivateSingleCard(c);
+                    }
+                });
+            }
             activateSingleCard(card);
         }
         localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
         renderTeacherMatrix();
     }
     function activateAllTasks(state) {
+        if (state) {
+            // If activating all, automatically enable multiple activation switcher
+            toggleMultiActive(true);
+            const cb = document.getElementById('multi-active-cb');
+            if (cb) cb.checked = true;
+        }
         studentCards.forEach(c => {
             const stName = c.name.trim();
             if (!stName) return;
@@ -1831,6 +2037,27 @@
         if (isOpening) {
             renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, true);
         }
+    }
+    // --- STUDENT PRESERVED SHARE PANEL RENDERER ---
+    function renderStudentSharePanel() {
+        if (isLeader || !currentHostId) return;
+        const panel = document.getElementById('student-share-panel');
+        if (!panel) return;
+        panel.classList.remove('hidden');
+        document.body.classList.add('student-connected');
+        const qrBox = document.getElementById('student-qr-container');
+        qrBox.innerHTML = '';
+        const baseUrl = window.location.href.split('?')[0];
+        const fullUrl = `${baseUrl}?host=${currentHostId}`;
+        new QRCode(qrBox, {
+            text: fullUrl,
+            width: 120,
+            height: 120,
+            colorDark: "#000000"
+        });
+        const idEl = document.getElementById('student-share-id-display');
+        if (idEl) idEl.innerText = formatId(currentHostId);
+        lucide.createIcons();
     }
     // --- LOCK ROTARY INTERFACE ---
     function initLockInterface() {
@@ -2574,6 +2801,7 @@
             hostConnection = conn;
             conn.on('open', () => {
                 document.getElementById('loading-msg').innerText = "З'єднано. Очікування викладача...";
+                renderStudentSharePanel();
             });
             peer.on('error', (err) => {
                if(err.type === 'peer-unavailable') {
@@ -2616,6 +2844,7 @@
                     if (data.success) {
                         myStudentName = data.name;
                         startForensicWatermarking();
+                        renderStudentSharePanel();
                         document.getElementById('loading-msg').innerText = "Ідентифіковано! Очікуйте активації вашого завдання викладачем...";
                     } else {
                         showNotification(data.msg || "Помилка вибору імені", true);
@@ -2691,6 +2920,7 @@
                                 </span>`;
                         }
                     }
+                    renderStudentSharePanel();
                 }
                 if (data.type === 'START_EXAM') {
                     document.getElementById('loading-msg').innerText = "Завантаження завдань екзамену...";
@@ -2704,6 +2934,7 @@
                         document.getElementById("qrcode-modal-tgt").innerHTML = "";
                         new QRCode(document.getElementById("qrcode-modal-tgt"), { text: currentUrl, width: 220, height: 220, colorDark: "#000000" });
                         startForensicWatermarking();
+                        renderStudentSharePanel();
                     }
                 }
                 if (data.type === 'PAGE') {
