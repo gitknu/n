@@ -190,65 +190,128 @@
         flex-wrap: wrap;
         gap: 8px;
         margin-bottom: 8px;
-        padding-bottom: 6px;
+        padding-bottom: 8px;
         border-bottom: 1px solid #eee;
     }
     .matrix-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 12px;
         overflow-y: auto;
-        padding-right: 4px;
+        padding-right: 6px;
         flex: 1;
         min-height: 160px;
     }
+    .matrix-grid::-webkit-scrollbar {
+        width: 6px;
+    }
+    .matrix-grid::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 4px;
+    }
+    /* WYSIWYG Student Card */
     .student-card {
         background: #ffffff;
-        border: 2px solid #e0e0e0;
-        border-radius: 10px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
         padding: 10px;
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 8px;
         text-align: left;
-        transition: border-color 0.2s, box-shadow 0.2s;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        position: relative;
+    }
+    .student-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border-color: #cbd5e1;
     }
     .student-card.active-task {
         border-color: var(--color-success);
         background: #fcfdfc;
-        box-shadow: 0 2px 10px rgba(46, 125, 50, 0.15);
+        box-shadow: 0 0 0 1px var(--color-success), 0 3px 10px rgba(46, 125, 50, 0.15);
     }
     .student-card.online {
         border-left: 5px solid var(--color-success);
     }
     .student-card-header {
         display: flex;
-        justify-content: space-between;
         align-items: center;
+        gap: 6px;
+        width: 100%;
     }
-    .student-name {
+    .student-name-input {
+        flex: 1;
         font-weight: 700;
-        font-size: 0.85rem;
-        color: #111;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 140px;
+        font-size: 0.88rem;
+        color: #1e293b;
+        border: 1px solid transparent;
+        background: #f8fafc;
+        border-radius: 6px;
+        padding: 5px 8px;
+        outline: none;
+        transition: all 0.2s;
+        font-family: inherit;
+    }
+    .student-name-input:hover {
+        border-color: #cbd5e1;
+        background: #ffffff;
+    }
+    .student-name-input:focus {
+        border-color: var(--color-attention-med);
+        background: #ffffff;
+        box-shadow: 0 0 0 2px rgba(11, 83, 148, 0.15);
+    }
+    .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .status-dot.online {
+        background-color: var(--color-success);
+        box-shadow: 0 0 6px rgba(46, 125, 50, 0.6);
+    }
+    .status-dot.offline {
+        background-color: #cbd5e1;
+    }
+    .btn-card-icon {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        color: #94a3b8;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+    }
+    .btn-card-icon:hover {
+        background: #fee2e2;
+        color: var(--color-error);
     }
     .student-card-task {
-        font-size: 0.75rem;
-        background: #f8f9fa;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        padding: 6px;
-        min-height: 48px;
-        max-height: 70px;
+        font-size: 0.82rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 8px;
+        min-height: 60px;
+        max-height: 100px;
         overflow-y: auto;
         font-family: inherit;
         font-weight: 500;
-        resize: none;
+        resize: vertical;
         width: 100%;
+        line-height: 1.35;
+        transition: border-color 0.2s;
+    }
+    .student-card-task:focus {
+        border-color: var(--color-attention-med);
+        background: #ffffff;
+        outline: none;
     }
     .student-card-footer {
         display: flex;
@@ -256,33 +319,67 @@
         align-items: center;
         gap: 6px;
         margin-top: auto;
+        padding-top: 4px;
     }
     .btn-matrix-toggle {
         border: none;
-        padding: 5px 10px;
+        padding: 6px 12px;
         border-radius: 6px;
-        font-size: 0.7rem;
+        font-size: 0.72rem;
         font-weight: 700;
         cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 5px;
         text-transform: uppercase;
         transition: all 0.2s;
+        letter-spacing: 0.3px;
     }
     .btn-matrix-activate {
         background: var(--color-attention-med);
         color: white;
+        box-shadow: 0 2px 5px rgba(11, 83, 148, 0.25);
     }
     .btn-matrix-activate:hover {
         background: #083c6c;
+        transform: translateY(-1px);
     }
     .btn-matrix-deactivate {
-        background: #ffebee;
+        background: #fee2e2;
         color: var(--color-error);
-        border: 1px solid var(--color-error);
+        border: 1px solid #fca5a5;
     }
-    /* --- DESKTOP ADAPTATION (WIDESCREEN NO VERTICAL SCROLL) --- */
+    .btn-matrix-deactivate:hover {
+        background: #fecaca;
+        color: #991b1b;
+    }
+    .btn-add-card {
+        background: var(--color-attention-med);
+        color: white;
+        border: none;
+        font-weight: 700;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+        box-shadow: 0 2px 6px rgba(11, 83, 148, 0.2);
+    }
+    .btn-add-card:hover {
+        background: #083c6c;
+        transform: translateY(-1px);
+    }
+    .btn-add-card:active {
+        transform: scale(0.97);
+    }
+    .task-inactive {
+        opacity: 0.5;
+        filter: grayscale(1);
+    }
+    /* --- DESKTOP ADAPTATION (WIDESCREEN NO VERTICAL SCROLL ON LEFT) --- */
     @media (min-width: 900px) {
         #ui-layer { padding: 20px; }
         #role-menu {
@@ -298,7 +395,7 @@
             font-size: 1.6rem;
         }
         #speaker-menu.card {
-            max-width: 1380px;
+            max-width: 1400px;
             width: 96vw;
             height: 92vh;
             max-height: 92vh;
@@ -307,7 +404,7 @@
         }
         .speaker-dashboard {
             display: grid;
-            grid-template-columns: 310px 1fr;
+            grid-template-columns: 320px 1fr;
             gap: 16px;
             height: calc(100% - 40px);
             overflow: hidden;
@@ -316,10 +413,10 @@
         .speaker-left-col {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
             height: 100%;
-            overflow-y: auto;
-            padding-right: 6px;
+            overflow: hidden; /* No scrollbar on the left column */
+            padding-right: 2px;
         }
         .speaker-right-col {
             display: flex;
@@ -414,7 +511,7 @@
         background:white; padding:4px; display:inline-flex; 
         align-items: center; justify-content: center;
         border: 2px solid var(--color-attention-med); border-radius: 10px;
-        flex-shrink: 1; max-height: 20vh; aspect-ratio: 1/1;
+        flex-shrink: 1; max-height: 18vh; aspect-ratio: 1/1;
     }
     #qr-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
     /* --- PDF VIEWER --- */
@@ -696,7 +793,7 @@
             <span id="st-badge-name" style="font-weight: 700; font-size: 0.85rem; color: var(--color-attention-med);"></span>
         </div>
         <h3 style="margin-top: 6px;">Ваше персональне завдання</h3>
-        <div id="st-task-text" style="width: 100%; min-height: 120px; background: #fdfdfd; border: 2px solid #ddd; border-radius: 10px; padding: 12px; text-align: left; font-size: 0.95rem; font-weight: 600; line-height: 1.4; color: #111; user-select: text;">
+        <div id="st-task-text" style="width: 100%; min-height: 120px; background: #fdfdfd; border: 2px solid #ddd; border-radius: 10px; padding: 12px; text-align: left; font-size: 0.95rem; font-weight: 600; line-height: 1.4; color: #111;">
             Очікування завдання...
         </div>
         <div style="font-size: 0.75rem; color: #666; text-align: left; width: 100%;">
@@ -717,6 +814,7 @@
             <span class="badge badge-ok">Викладач</span>
         </div>
         <div class="speaker-dashboard">
+            <!-- LEFT COLUMN (STREAMLINED, NO VERTICAL SCROLL) -->
             <div class="speaker-left-col">
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%;">
                     <div id="qr-container"></div>
@@ -727,20 +825,10 @@
                         <button class="icon-btn" onclick="shareId()"><i data-lucide="share-2"></i> Надіслати</button>
                     </div>
                 </div>
-                <div style="width: 100%;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                        <label style="font-size: 0.72rem; font-weight: 700; color: #444;">Студенти та завдання (ПІБ | Завдання):</label>
-                        <span id="teacher-roster-status" class="badge badge-wait">Не затверджено</span>
-                    </div>
-                    <textarea id="students-textarea" placeholder="Бондаренко Андрій | Білет №1: Дослідити екстремуми функції&#10;Коваленко Марія | Білет №2: Знайти визначений інтеграл&#10;Мельник Олександр | Білет №3: Розв'язати дифрівняння"></textarea>
-                    <button class="icon-btn btn-approve" style="margin-top: 4px; width: 100%; justify-content: center;" onclick="saveAndBroadcastStudents()">
-                        <i data-lucide="check-circle"></i> Затвердити та надіслати список
-                    </button>
-                </div>
-                <div style="width: 100%;">
-                    <label style="font-size: 0.72rem; font-weight: 700; color: #444; display: block; margin-bottom: 2px;">Загальні матеріали (PDF / Презентація):</label>
+                <div style="width: 100%; margin-top: 6px;">
+                    <label style="font-size: 0.75rem; font-weight: 700; color: #444; display: block; margin-bottom: 4px;">Загальні матеріали (PDF / Презентація):</label>
                     <input type="text" id="gdrive-input" oninput="resetInputColor()" placeholder="URL завдань (PDF / Google Docs / Slides)">
-                    <div id="sync-status" style="display:none; color: var(--color-attention-high); font-weight:700; font-size: 0.8rem; margin-top: 2px;">
+                    <div id="sync-status" style="display:none; color: var(--color-attention-high); font-weight:700; font-size: 0.8rem; margin-top: 4px;">
                         <i data-lucide="loader-2" class="spin"></i> Завантаження...
                     </div>
                 </div>
@@ -751,23 +839,29 @@
                     </button>
                 </div>
             </div>
+            <!-- RIGHT COLUMN (WYSIWYG MATRIX) -->
             <div class="speaker-right-col">
                 <div class="matrix-wrapper">
                     <div class="matrix-toolbar">
-                        <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <span style="font-size: 0.85rem; font-weight: 700; color: #333;">МАТРИЦЯ СТУДЕНТІВ:</span>
                             <span id="speaker-user-count" class="badge badge-ok">0 онлайн</span>
                             <span id="matrix-active-count" class="badge badge-wait">0 активно</span>
+                            <span id="matrix-total-count" class="badge" style="background:#e2e8f0; color:#334155;">Всього: 0</span>
                         </div>
-                        <div style="display: flex; gap: 6px;">
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <button class="btn-add-card" onclick="addStudentCard('', '')">
+                                <i data-lucide="plus" style="width:14px;height:14px;"></i> Додати картку
+                            </button>
+                            <button class="icon-btn" onclick="openImportModal()" title="Швидка вставка списку">
+                                <i data-lucide="file-text"></i> Імпорт
+                            </button>
                             <button class="icon-btn" onclick="activateAllTasks(true)"><i data-lucide="play"></i> Всім</button>
                             <button class="icon-btn" onclick="activateAllTasks(false)"><i data-lucide="square"></i> Зупинити всі</button>
                         </div>
                     </div>
                     <div class="matrix-grid" id="teacher-matrix-grid">
-                        <div style="grid-column: 1/-1; color: #888; text-align: center; padding: 25px; font-size: 0.85rem;">
-                            Введіть студентів та натисніть «Затвердити та надіслати список» для відкриття матриці.
-                        </div>
+                        <!-- Dynamic Student Blocks Rendered Here -->
                     </div>
                 </div>
             </div>
@@ -779,6 +873,21 @@
         <button class="btn-secondary" onclick="forceReload()" style="margin-top: 15px; border-color: #ccc; color: #666; width: auto;">
             <i data-lucide="refresh-cw"></i> ОНОВИТИ
         </button>
+    </div>
+</div>
+<!-- BULK IMPORT MODAL -->
+<div id="import-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 520px; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
+            <h3 style="color: var(--color-attention-med);">Імпорт списку студентів</h3>
+            <span class="badge badge-ok">Швидке додавання</span>
+        </div>
+        <p class="card-desc" style="margin-bottom: 8px;">Вставте рядки у форматі <code>ПІБ | Завдання</code> або просто список ПІБ:</p>
+        <textarea id="import-modal-text" style="width: 100%; height: 160px; font-family: monospace;" placeholder="Іванов Іван | Білет №1&#10;Петров Петро | Білет №2&#10;Сидоренко Ганна"></textarea>
+        <div class="action-bar" style="margin-top: 12px;">
+            <button class="btn-secondary" onclick="closeImportModal()">СКАСУВАТИ</button>
+            <button class="btn-primary" onclick="applyBulkImport()">СТВОРИТИ КАРТКИ</button>
+        </div>
     </div>
 </div>
 <div id="teacher-auth-modal" class="modal-overlay">
@@ -800,7 +909,7 @@
             <h3 style="color: var(--color-attention-med);">Моє завдання</h3>
             <span class="badge badge-ok">Активовано</span>
         </div>
-        <div id="modal-task-text" style="width: 100%; min-height: 100px; max-height: 250px; overflow-y: auto; background: #fdfdfd; border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-weight: 600; font-size: 0.95rem; line-height: 1.4; user-select: text;">
+        <div id="modal-task-text" style="width: 100%; min-height: 100px; max-height: 250px; overflow-y: auto; background: #fdfdfd; border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-weight: 600; font-size: 0.95rem; line-height: 1.4;">
             Немає активного завдання
         </div>
         <button class="btn-secondary" style="margin-top:15px; width: 100%;" onclick="toggleTaskModal()">ЗАКРИТИ</button>
@@ -923,7 +1032,8 @@
     let isDrawing = false;
     let lastX = 0, lastY = 0;
     let pageMarks = {};
-    // Exam-specific state (Real students, Tasks, Matrix)
+    // WYSIWYG Student Cards State
+    let studentCards = []; // Array of { id, name, task, active }
     let registeredStudents = [];
     let studentTasks = {}; // name -> task string
     let activeStudentTasks = {}; // name -> boolean
@@ -945,8 +1055,13 @@
             try {
                 const parsed = JSON.parse(stored);
                 if (Array.isArray(parsed) && parsed.length > 0) {
-                    const lines = parsed.map(item => typeof item === 'object' ? `${item.name} | ${item.task || ''}` : item);
-                    document.getElementById('students-textarea').value = lines.join('\n');
+                    studentCards = parsed.map((item, idx) => ({
+                        id: item.id || ('st_' + Date.now() + '_' + idx),
+                        name: item.name || '',
+                        task: item.task || '',
+                        active: !!item.active
+                    }));
+                    syncCardStateToGlobals();
                 }
             } catch(e) {}
         }
@@ -999,121 +1114,232 @@
             setTimeout(() => document.getElementById('teacher-pwd').classList.remove('input-error'), 1000);
         }
     }
-    // --- REAL STUDENT LIST & TASK APPROVAL ---
-    function saveAndBroadcastStudents() {
-        const raw = document.getElementById('students-textarea').value;
+    // --- WYSIWYG CARD & MATRIX LOGIC ---
+    function syncCardStateToGlobals() {
+        registeredStudents = studentCards.map(c => c.name.trim()).filter(n => n.length > 0);
+        studentTasks = {};
+        activeStudentTasks = {};
+        studentCards.forEach(c => {
+            const n = c.name.trim();
+            if (n) {
+                studentTasks[n] = c.task || '';
+                activeStudentTasks[n] = !!c.active;
+            }
+        });
+        studentsApproved = registeredStudents.length > 0;
+        localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
+    }
+    function addStudentCard(name = "", task = "") {
+        const newId = 'st_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+        studentCards.push({
+            id: newId,
+            name: name,
+            task: task || `Білет №${studentCards.length + 1}`,
+            active: false
+        });
+        syncCardStateToGlobals();
+        broadcastStudentList();
+        renderTeacherMatrix();
+        setTimeout(() => {
+            const el = document.getElementById(`name-input-${newId}`);
+            if (el) el.focus();
+        }, 50);
+    }
+    function deleteStudentCard(id) {
+        const card = studentCards.find(c => c.id === id);
+        if (!card) return;
+        const stName = card.name.trim();
+        if (card.active && stName) {
+            card.active = false;
+            sendTaskToStudent(stName);
+        }
+        for (const peerId in studentClaims) {
+            if (studentClaims[peerId] === stName) delete studentClaims[peerId];
+        }
+        studentCards = studentCards.filter(c => c.id !== id);
+        syncCardStateToGlobals();
+        broadcastStudentList();
+        renderTeacherMatrix();
+    }
+    function updateCardName(id, newName) {
+        const card = studentCards.find(c => c.id === id);
+        if (!card) return;
+        const oldName = card.name.trim();
+        const trimmedNew = newName.trim();
+        if (oldName === trimmedNew) return;
+        for (const peerId in studentClaims) {
+            if (studentClaims[peerId] === oldName) studentClaims[peerId] = trimmedNew;
+        }
+        card.name = newName;
+        syncCardStateToGlobals();
+        broadcastStudentList();
+        if (card.active && trimmedNew) sendTaskToStudent(trimmedNew);
+        updateMatrixCounts();
+    }
+    function updateCardTask(id, newTask) {
+        const card = studentCards.find(c => c.id === id);
+        if (!card) return;
+        card.task = newTask;
+        const stName = card.name.trim();
+        if (stName) {
+            studentTasks[stName] = newTask;
+            if (card.active) sendTaskToStudent(stName);
+        }
+        localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
+    }
+    function toggleCardActivation(id) {
+        const card = studentCards.find(c => c.id === id);
+        if (!card) return;
+        const stName = card.name.trim();
+        if (!stName) {
+            return showNotification("Введіть ПІБ студента перед активацією!", true);
+        }
+        card.active = !card.active;
+        activeStudentTasks[stName] = card.active;
+        localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
+        sendTaskToStudent(stName);
+        renderTeacherMatrix();
+    }
+    function activateAllTasks(state) {
+        studentCards.forEach(c => {
+            c.active = state;
+            const stName = c.name.trim();
+            if (stName) {
+                activeStudentTasks[stName] = state;
+                sendTaskToStudent(stName);
+            }
+        });
+        localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
+        renderTeacherMatrix();
+    }
+    function openImportModal() {
+        document.getElementById('import-modal-text').value = '';
+        document.getElementById('import-modal').style.display = 'flex';
+    }
+    function closeImportModal() {
+        document.getElementById('import-modal').style.display = 'none';
+    }
+    function applyBulkImport() {
+        const raw = document.getElementById('import-modal-text').value;
         const lines = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
         if (lines.length === 0) {
-            return showNotification("Введіть реальний список студентів перед затвердженням!", true);
+            closeImportModal();
+            return;
         }
-        const list = [];
-        const tasks = {};
-        const storageData = [];
         lines.forEach((line, idx) => {
             let name = line;
-            let task = `Варіант №${idx + 1}`;
+            let task = `Варіант №${studentCards.length + 1}`;
             if (line.includes('|')) {
                 const parts = line.split('|');
                 name = parts[0].trim();
                 task = parts.slice(1).join('|').trim() || task;
             }
             if (name.length > 0) {
-                list.push(name);
-                tasks[name] = task;
-                storageData.push({ name, task });
-                if (activeStudentTasks[name] === undefined) {
-                    activeStudentTasks[name] = false;
-                }
+                studentCards.push({
+                    id: 'st_' + Date.now() + '_' + Math.floor(Math.random() * 10000) + '_' + idx,
+                    name: name,
+                    task: task,
+                    active: false
+                });
             }
         });
-        registeredStudents = list;
-        studentTasks = tasks;
-        studentsApproved = true;
-        localStorage.setItem('exam_students_data', JSON.stringify(storageData));
-        const badge = document.getElementById('teacher-roster-status');
-        if (badge) {
-            badge.className = "badge badge-ok";
-            badge.innerText = `Затверджено (${list.length})`;
-        }
+        syncCardStateToGlobals();
+        broadcastStudentList();
+        renderTeacherMatrix();
+        closeImportModal();
+        showNotification(`Створено ${lines.length} карток студентів.`, false);
+    }
+    function broadcastStudentList() {
         broadcast({
             type: 'STUDENT_LIST_SYNC',
-            approved: true,
+            approved: studentsApproved,
             students: registeredStudents,
             claims: studentClaims
         });
-        renderTeacherMatrix();
-        showNotification("Список та індивідуальні завдання затверджено (" + list.length + " осіб).", false);
     }
-    // --- TEACHER MATRIX VIEW (INDIVIDUAL ACTIVATION) ---
+    function updateMatrixCounts() {
+        let activeCount = studentCards.filter(c => c.active).length;
+        const activeCountEl = document.getElementById('matrix-active-count');
+        const totalCountEl = document.getElementById('matrix-total-count');
+        if (activeCountEl) activeCountEl.innerText = `${activeCount} активно`;
+        if (totalCountEl) totalCountEl.innerText = `Всього: ${studentCards.length}`;
+    }
     function renderTeacherMatrix() {
         const grid = document.getElementById('teacher-matrix-grid');
         if (!grid) return;
-        if (!studentsApproved || registeredStudents.length === 0) {
-            grid.innerHTML = '<div style="grid-column: 1/-1; color: #888; text-align: center; padding: 25px; font-size: 0.85rem;">Список студентів ще не затверджено.</div>';
+        updateMatrixCounts();
+        if (studentCards.length === 0) {
+            grid.innerHTML = `
+            <div style="grid-column: 1/-1; color: #64748b; text-align: center; padding: 40px 20px; font-size: 0.9rem; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                <i data-lucide="layout-grid" style="width: 48px; height: 48px; stroke-width: 1.5; color: #94a3b8;"></i>
+                <div><b>Матриця порожня.</b> Додайте студентів та завдання для початку іспиту.</div>
+                <div style="display:flex; gap: 8px; margin-top: 5px;">
+                    <button class="btn-add-card" onclick="addStudentCard('','')">
+                        <i data-lucide="plus"></i> Додати першу картку
+                    </button>
+                    <button class="icon-btn" onclick="openImportModal()">
+                        <i data-lucide="file-text"></i> Вставити списком
+                    </button>
+                </div>
+            </div>`;
+            lucide.createIcons();
             return;
         }
-        let activeCount = 0;
         let html = '';
-        registeredStudents.forEach(stName => {
-            const peerId = Object.keys(studentClaims).find(k => studentClaims[k] === stName);
-            const isOnline = peerId && connections.some(c => c.id === peerId);
-            const clientConn = isOnline ? connections.find(c => c.id === peerId) : null;
+        studentCards.forEach(c => {
+            const stName = c.name.trim();
+            const peerId = stName ? Object.keys(studentClaims).find(k => studentClaims[k] === stName) : null;
+            const isOnline = peerId && connections.some(conn => conn.id === peerId);
+            const clientConn = isOnline ? connections.find(conn => conn.id === peerId) : null;
             const handRaised = clientConn ? clientConn.handRaised : false;
             const violations = peerId ? (studentViolations[peerId] || 0) : 0;
-            const isActive = !!activeStudentTasks[stName];
-            if (isActive) activeCount++;
-            const taskText = studentTasks[stName] || 'Завдання не вказано';
-            const escapedName = escapeHtml(stName);
+            const isActive = !!c.active;
+            const escapedName = escapeHtml(c.name);
+            const escapedTask = escapeHtml(c.task);
             html += `
             <div class="student-card ${isActive ? 'active-task' : ''} ${isOnline ? 'online' : ''}">
                 <div class="student-card-header">
-                    <span class="student-name" title="${escapedName}">${escapedName}</span>
-                    <span class="badge ${isOnline ? 'badge-ok' : 'badge-wait'}">${isOnline ? 'Онлайн' : 'Очікує'}</span>
+                    <span class="status-dot ${isOnline ? 'online' : 'offline'}" title="${isOnline ? 'Онлайн' : 'Очікує підключення'}"></span>
+                    <input type="text" class="student-name-input" id="name-input-${c.id}" 
+                           value="${escapedName}" 
+                           placeholder="ПІБ студента..." 
+                           onchange="updateCardName('${c.id}', this.value)" 
+                           onkeydown="if(event.key==='Enter') this.blur()">
+                    <button class="btn-card-icon" onclick="deleteStudentCard('${c.id}')" title="Видалити картку">
+                        <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                    </button>
                 </div>
-                <textarea class="student-card-task" onchange="updateSingleStudentTask('${escapeJs(stName)}', this.value)" placeholder="Введіть персональне завдання...">${escapeHtml(taskText)}</textarea>
+                <textarea class="student-card-task" 
+                          placeholder="Текст завдання або питання..." 
+                          oninput="updateCardTask('${c.id}', this.value)">${escapedTask}</textarea>
                 <div class="student-card-footer">
                     <div style="display:flex; gap: 4px; align-items:center;">
                         ${violations > 0 ? `<span class="badge badge-warn" title="Підозр: ${violations}">⚠️ ${violations}</span>` : ''}
-                        ${handRaised ? `<span style="color:#f59e0b; font-size: 0.8rem;" title="Піднято руку">✋</span>` : ''}
+                        ${handRaised ? `<span style="color:#f59e0b; font-size: 0.9rem;" title="Піднято руку">✋</span>` : ''}
+                        ${peerId ? '<span class="badge badge-ok" style="font-size:0.65rem;" title="Студент вибрав це ім\'я">Закріплено</span>' : '<span class="badge badge-wait" style="font-size:0.65rem;">Вільний</span>'}
                     </div>
-                    <button class="btn-matrix-toggle ${isActive ? 'btn-matrix-deactivate' : 'btn-matrix-activate'}" onclick="toggleStudentTaskActivation('${escapeJs(stName)}')">
+                    <button class="btn-matrix-toggle ${isActive ? 'btn-matrix-deactivate' : 'btn-matrix-activate'}" onclick="toggleCardActivation('${c.id}')">
                         ${isActive ? '<i data-lucide="square" style="width:12px;height:12px;"></i> Зупинити' : '<i data-lucide="play" style="width:12px;height:12px;"></i> Активувати'}
                     </button>
                 </div>
             </div>`;
         });
         grid.innerHTML = html;
-        document.getElementById('matrix-active-count').innerText = `${activeCount} активно`;
         lucide.createIcons();
     }
-    function updateSingleStudentTask(stName, newText) {
-        studentTasks[stName] = newText.trim();
-        if (activeStudentTasks[stName]) {
-            sendTaskToStudent(stName);
-        }
-    }
-    function toggleStudentTaskActivation(stName) {
-        activeStudentTasks[stName] = !activeStudentTasks[stName];
-        sendTaskToStudent(stName);
-        renderTeacherMatrix();
-    }
-    function activateAllTasks(state) {
-        registeredStudents.forEach(stName => {
-            activeStudentTasks[stName] = state;
-            sendTaskToStudent(stName);
-        });
-        renderTeacherMatrix();
-    }
     function sendTaskToStudent(stName) {
+        if (!stName) return;
         const peerId = Object.keys(studentClaims).find(k => studentClaims[k] === stName);
         if (!peerId) return;
         const client = connections.find(c => c.id === peerId);
         if (client && client.conn.open) {
+            const isActive = !!activeStudentTasks[stName];
             client.conn.send({
                 type: 'INDIVIDUAL_TASK',
                 name: stName,
-                task: studentTasks[stName] || '',
-                active: !!activeStudentTasks[stName]
+                // If deactivated, NEVER send task string to prevent cheating!
+                task: isActive ? (studentTasks[stName] || '') : '',
+                active: isActive
             });
         }
     }
@@ -1182,9 +1408,6 @@
     function escapeHtml(str) {
         return (str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
     }
-    function escapeJs(str) {
-        return (str || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
-    }
     // --- STUDENT DROPDOWN & IDENTITY CLAIM ---
     function showWaitingForTeacherApproval() {
         document.getElementById('student-identity-menu').classList.add('hidden');
@@ -1238,6 +1461,11 @@
         document.getElementById('ui-layer').classList.add('hidden');
     }
     function toggleTaskModal() {
+        // ENFORCE TASK AVAILABILITY: If task is deactivated, strictly forbid viewing!
+        if (!isMyTaskActive) {
+            showNotification("Ваше завдання наразі деактивовано викладачем! Перегляд заборонено.", true);
+            return;
+        }
         const modal = document.getElementById('task-modal');
         modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
     }
@@ -1762,6 +1990,7 @@
         updateToolbarForRole();
         document.getElementById('speaker-menu').classList.remove('hidden');
         drawCanvas.style.pointerEvents = 'auto';
+        renderTeacherMatrix();
         myIdRaw = generateShortId();
         const peerJsId = APP_PREFIX + myIdRaw;
         peer = new Peer(peerJsId);
@@ -1886,13 +2115,15 @@
         const modalContainer = document.getElementById('modal-roster-list');
         if (!modalContainer) return;
         let html = '';
-        if (!studentsApproved || registeredStudents.length === 0) {
-            html = '<div style="color: #888; text-align: center; padding: 12px; font-size: 0.8rem;">Список ще не затверджено.</div>';
+        if (studentCards.length === 0) {
+            html = '<div style="color: #888; text-align: center; padding: 12px; font-size: 0.8rem;">Картки студентів ще не створено.</div>';
         } else {
-            registeredStudents.forEach(stName => {
+            studentCards.forEach(c => {
+                const stName = c.name.trim();
+                if (!stName) return;
                 const peerId = Object.keys(studentClaims).find(k => studentClaims[k] === stName);
-                const isOnline = peerId && connections.some(c => c.id === peerId);
-                const clientConn = isOnline ? connections.find(c => c.id === peerId) : null;
+                const isOnline = peerId && connections.some(conn => conn.id === peerId);
+                const clientConn = isOnline ? connections.find(conn => conn.id === peerId) : null;
                 const handRaised = clientConn ? clientConn.handRaised : false;
                 const violations = peerId ? (studentViolations[peerId] || 0) : 0;
                 let badge = '<span class="badge badge-wait">Очікує</span>';
@@ -1902,8 +2133,8 @@
                         : `<span class="badge badge-ok">В мережі</span>`;
                 }
                 html += `
-                <div class="roster-row">
-                    <div><b>${escapeHtml(stName)}</b> ${handRaised ? '✋' : ''}</div>
+                <div class="roster-row" style="display:flex; justify-content:space-between; align-items:center; padding: 8px 0; border-bottom: 1px solid #eee;">
+                    <div><b>${escapeHtml(stName)}</b> ${handRaised ? '✋' : ''} ${c.active ? '<span class="badge badge-ok" style="font-size:0.65rem;">Активно</span>' : ''}</div>
                     <div>${badge}</div>
                 </div>`;
             });
@@ -2013,30 +2244,49 @@
                         }
                     }
                 }
-                // INDIVIDUAL TASK ACTIVATION
+                // INDIVIDUAL TASK ACTIVATION & SECURITY TRACKING
                 if (data.type === 'INDIVIDUAL_TASK') {
-                    myIndividualTask = data.task || '';
                     isMyTaskActive = !!data.active;
-                    document.getElementById('st-task-text').innerText = myIndividualTask;
-                    document.getElementById('modal-task-text').innerText = myIndividualTask;
-                    document.getElementById('st-badge-name').innerText = myStudentName;
+                    myIndividualTask = isMyTaskActive ? (data.task || '') : '';
+                    const taskCardEl = document.getElementById('student-task-card');
+                    const taskModalEl = document.getElementById('task-modal');
+                    const loadingMenuEl = document.getElementById('loading-menu');
+                    const loadingMsgEl = document.getElementById('loading-msg');
+                    const taskBtn = document.getElementById('btn-my-task');
                     if (isMyTaskActive) {
+                        document.getElementById('st-task-text').innerText = myIndividualTask;
+                        document.getElementById('modal-task-text').innerText = myIndividualTask;
+                        document.getElementById('st-badge-name').innerText = myStudentName;
+                        if (taskBtn) {
+                            taskBtn.classList.remove('task-inactive');
+                            taskBtn.title = "Переглянути активне завдання";
+                        }
                         if (document.getElementById('ui-layer').classList.contains('hidden')) {
-                            // User is already on slides, show modal or enable button
-                            showNotification("Викладач щойно активував ваше персональне завдання! Відкрийте кнопку «Завдання».", false);
+                            showNotification("Викладач щойно активував ваше персональне завдання! Відкрийте розділ «Завдання» у меню.", false);
                         } else {
-                            // User is waiting in UI layer, show full card
-                            document.getElementById('loading-menu').classList.add('hidden');
+                            loadingMenuEl.classList.add('hidden');
                             document.getElementById('student-identity-menu').classList.add('hidden');
-                            document.getElementById('student-task-card').classList.remove('hidden');
+                            taskCardEl.classList.remove('hidden');
                         }
                     } else {
-                        showNotification("Ваше завдання призупинено викладачем.", true);
-                        if (!document.getElementById('student-task-card').classList.contains('hidden')) {
-                            document.getElementById('student-task-card').classList.add('hidden');
-                            document.getElementById('loading-menu').classList.remove('hidden');
-                            document.getElementById('loading-msg').innerText = "Очікування активації завдання викладачем...";
+                        // DEACTIVATED - WIPE CONTENT IMMEDIATELY TO PREVENT SHARING/CHEATING
+                        document.getElementById('st-task-text').innerText = "Завдання тимчасово деактивовано або призупинено викладачем.";
+                        document.getElementById('modal-task-text').innerText = "Доступ заблоковано. Завдання деактивовано викладачем.";
+                        if (taskModalEl) taskModalEl.style.display = 'none';
+                        if (taskBtn) {
+                            taskBtn.classList.add('task-inactive');
+                            taskBtn.title = "Завдання деактивовано";
                         }
+                        if (!taskCardEl.classList.contains('hidden')) {
+                            taskCardEl.classList.add('hidden');
+                            loadingMenuEl.classList.remove('hidden');
+                            loadingMsgEl.innerHTML = `
+                                <span style="color:var(--color-error); font-weight:700;">Завдання деактивовано викладачем</span><br>
+                                <span style="font-size:0.8rem; font-weight:500; color:#666; margin-top:8px; display:block;">
+                                    Доступ до питання призупинено. Очікуйте вказівки викладача.
+                                </span>`;
+                        }
+                        showNotification("Увага! Викладач призупинив доступ до вашого завдання. Питання приховано.", true);
                     }
                 }
                 if (data.type === 'START_EXAM') {
