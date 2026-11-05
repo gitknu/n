@@ -379,6 +379,45 @@
         opacity: 0.5;
         filter: grayscale(1);
     }
+    /* --- TOGGLE SWITCH FOR MULTI-ACTIVE MODE --- */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 36px;
+        height: 20px;
+        flex-shrink: 0;
+    }
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #cbd5e1;
+        transition: .25s ease;
+        border-radius: 20px;
+    }
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 14px;
+        width: 14px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .25s ease;
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    }
+    input:checked + .slider {
+        background-color: var(--color-attention-med);
+    }
+    input:checked + .slider:before {
+        transform: translateX(16px);
+    }
     /* --- DESKTOP ADAPTATION (WIDESCREEN NO VERTICAL SCROLL ON LEFT) --- */
     @media (min-width: 900px) {
         #ui-layer { padding: 20px; }
@@ -413,7 +452,7 @@
         .speaker-left-col {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             height: 100%;
             overflow: hidden; /* No scrollbar on the left column */
             padding-right: 2px;
@@ -825,11 +864,27 @@
                         <button class="icon-btn" onclick="shareId()"><i data-lucide="share-2"></i> Надіслати</button>
                     </div>
                 </div>
-                <div style="width: 100%; margin-top: 6px;">
-                    <label style="font-size: 0.75rem; font-weight: 700; color: #444; display: block; margin-bottom: 4px;">Загальні матеріали (PDF / Презентація):</label>
+                <div style="width: 100%; margin-top: 4px;">
+                    <label style="font-size: 0.75rem; font-weight: 700; color: #444; display: block; margin-bottom: 3px;">Загальні матеріали (PDF / Презентація):</label>
                     <input type="text" id="gdrive-input" oninput="resetInputColor()" placeholder="URL завдань (PDF / Google Docs / Slides)">
                     <div id="sync-status" style="display:none; color: var(--color-attention-high); font-weight:700; font-size: 0.8rem; margin-top: 4px;">
                         <i data-lucide="loader-2" class="spin"></i> Завантаження...
+                    </div>
+                </div>
+                <!-- MULTI-ACTIVATION SECURITY TOGGLE -->
+                <div style="width: 100%; margin-top: 4px; padding: 7px 10px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="shield" style="width: 15px; height: 15px; color: var(--color-attention-med);"></i>
+                            <span style="font-size: 0.75rem; font-weight: 700; color: #1e293b;">Мульти-активація:</span>
+                        </div>
+                        <label class="switch" title="Дозволити одночасну активацію завдань кільком студентам">
+                            <input type="checkbox" id="toggle-multi-active" onchange="toggleMultiActiveMode(this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div id="mode-desc-text" style="font-size: 0.68rem; color: #64748b; margin-top: 3px; line-height: 1.25;">
+                        Режим: <b style="color:var(--color-attention-med);">1 студент</b> (захист від помилок)
                     </div>
                 </div>
                 <div class="action-bar" style="margin-top: auto;">
@@ -856,7 +911,12 @@
                             <button class="icon-btn" onclick="openImportModal()" title="Швидка вставка списку">
                                 <i data-lucide="file-text"></i> Імпорт
                             </button>
-                            <button class="icon-btn" onclick="activateAllTasks(true)"><i data-lucide="play"></i> Всім</button>
+                            <button class="icon-btn" onclick="shuffleTasks()" title="Випадково перемішати завдання між студентами">
+                                <i data-lucide="shuffle"></i> Перемішати
+                            </button>
+                            <button class="icon-btn" id="btn-activate-all" onclick="activateAllTasks(true)" title="Доступно лише в груповому режимі" style="opacity: 0.5;">
+                                <i data-lucide="play"></i> Всім
+                            </button>
                             <button class="icon-btn" onclick="activateAllTasks(false)"><i data-lucide="square"></i> Зупинити всі</button>
                         </div>
                     </div>
@@ -1032,7 +1092,7 @@
     let isDrawing = false;
     let lastX = 0, lastY = 0;
     let pageMarks = {};
-    // WYSIWYG Student Cards State
+    // WYSIWYG Student Cards State & Security Policy
     let studentCards = []; // Array of { id, name, task, active }
     let registeredStudents = [];
     let studentTasks = {}; // name -> task string
@@ -1043,6 +1103,7 @@
     let myStudentName = "";
     let myIndividualTask = "";
     let isMyTaskActive = false;
+    let allowMultipleActive = false; // Default: Single student active at a time to prevent accidental teaching
     const lockDigits = [0,0,0,0,0,0,0,0,0];
     let html5QrcodeScanner = null;
     lucide.createIcons();
@@ -1114,7 +1175,7 @@
             setTimeout(() => document.getElementById('teacher-pwd').classList.remove('input-error'), 1000);
         }
     }
-    // --- WYSIWYG CARD & MATRIX LOGIC ---
+    // --- WYSIWYG CARD, MULTI-ACTIVATION & MATRIX LOGIC ---
     function syncCardStateToGlobals() {
         registeredStudents = studentCards.map(c => c.name.trim()).filter(n => n.length > 0);
         studentTasks = {};
@@ -1128,6 +1189,63 @@
         });
         studentsApproved = registeredStudents.length > 0;
         localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
+    }
+    function toggleMultiActiveMode(enabled) {
+        allowMultipleActive = enabled;
+        const desc = document.getElementById('mode-desc-text');
+        const btnAll = document.getElementById('btn-activate-all');
+        if (allowMultipleActive) {
+            if (desc) desc.innerHTML = 'Режим: <b style="color:var(--color-attention-med);">Груповий</b> (можна кількох)';
+            if (btnAll) {
+                btnAll.style.opacity = '1';
+                btnAll.title = "Активувати всім";
+            }
+        } else {
+            if (desc) desc.innerHTML = 'Режим: <b style="color:var(--color-attention-med);">1 студент</b> (захист від помилок)';
+            if (btnAll) {
+                btnAll.style.opacity = '0.5';
+                btnAll.title = "Доступно лише в груповому режимі";
+            }
+            // If more than 1 student is active, immediately deactivate the surplus
+            const activeOnes = studentCards.filter(c => c.active);
+            if (activeOnes.length > 1) {
+                for (let i = 1; i < activeOnes.length; i++) {
+                    activeOnes[i].active = false;
+                    const stName = activeOnes[i].name.trim();
+                    if (stName) {
+                        activeStudentTasks[stName] = false;
+                        sendTaskToStudent(stName);
+                    }
+                }
+                syncCardStateToGlobals();
+                renderTeacherMatrix();
+                showNotification("Увімкнено одиночний режим. Залишено активним лише 1 студента.", false);
+            }
+        }
+    }
+    function shuffleTasks() {
+        if (studentCards.length < 2) {
+            return showNotification("Для перемішування потрібно створити щонайменше 2 картки!", true);
+        }
+        // Extract tasks and shuffle using Fisher-Yates
+        const tasks = studentCards.map(c => c.task);
+        for (let i = tasks.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [tasks[i], tasks[j]] = [tasks[j], tasks[i]];
+        }
+        studentCards.forEach((c, idx) => {
+            c.task = tasks[idx];
+            const stName = c.name.trim();
+            if (stName) {
+                studentTasks[stName] = c.task;
+                if (c.active) {
+                    sendTaskToStudent(stName);
+                }
+            }
+        });
+        syncCardStateToGlobals();
+        renderTeacherMatrix();
+        showNotification("Завдання успішно випадково перемішано між студентами!", false);
     }
     function addStudentCard(name = "", task = "") {
         const newId = 'st_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
@@ -1194,13 +1312,30 @@
         if (!stName) {
             return showNotification("Введіть ПІБ студента перед активацією!", true);
         }
-        card.active = !card.active;
+        const willBeActive = !card.active;
+        // SINGLE STUDENT RESTRICTION (Default Protection):
+        if (willBeActive && !allowMultipleActive) {
+            studentCards.forEach(c => {
+                if (c.id !== id && c.active) {
+                    c.active = false;
+                    const otherName = c.name.trim();
+                    if (otherName) {
+                        activeStudentTasks[otherName] = false;
+                        sendTaskToStudent(otherName);
+                    }
+                }
+            });
+        }
+        card.active = willBeActive;
         activeStudentTasks[stName] = card.active;
         localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
         sendTaskToStudent(stName);
         renderTeacherMatrix();
     }
     function activateAllTasks(state) {
+        if (state && !allowMultipleActive) {
+            return showNotification("Увімкніть перемикач «Мульти-активація» на лівій панелі для роздачі завдань всім одночасно!", true);
+        }
         studentCards.forEach(c => {
             c.active = state;
             const stName = c.name.trim();
