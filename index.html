@@ -41,7 +41,7 @@
         -webkit-user-select: text !important;
     }
     @media print {
-        html, body { display: none !important; visibility: hidden !important; }
+        html, body, * { display: none !important; visibility: hidden !important; }
     }
     body {
         margin: 0; padding: 0;
@@ -72,6 +72,16 @@
     #drm-curtain i { width: 80px; height: 80px; margin-bottom: 20px; color: var(--color-attention-high); }
     #drm-curtain h2 { font-size: 1.6rem; margin: 0 0 10px 0; color: #ff4d4d; letter-spacing: 1px; font-weight: 800; }
     #drm-curtain p { max-width: 480px; font-size: 0.95rem; color: #d1d5db; margin: 0 0 25px 0; line-height: 1.5; }
+    /* HARDENED SCREENSHOT BLACKOUT CLASS */
+    body.drm-blackout #student-task-card,
+    body.drm-blackout #pdf-container,
+    body.drm-blackout .task-canvas-wrapper,
+    body.drm-blackout #task-modal,
+    body.drm-blackout #ui-layer {
+        filter: blur(50px) brightness(0) !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+    }
     /* --- UI OVERLAYS --- */
     #ui-layer {
         position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -453,7 +463,7 @@
         .speaker-left-col {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
             height: 100%;
             overflow: hidden; 
             padding-right: 2px;
@@ -824,11 +834,14 @@
     </div>
     <div id="student-task-card" class="card hidden" style="border-color: var(--color-attention-med);">
         <div style="display:flex; justify-content: space-between; align-items:center; width: 100%;">
-            <span class="badge badge-ok">Завдання активовано</span>
+            <div style="display: flex; gap: 6px; align-items: center;">
+                <span class="badge badge-ok">Завдання активовано</span>
+                <span id="st-timer-badge" class="badge badge-warn hidden">⏳ 20с</span>
+            </div>
             <span id="st-badge-name" style="font-weight: 700; font-size: 0.85rem; color: var(--color-attention-med);"></span>
         </div>
         <h3 style="margin-top: 6px;">Ваше персональне завдання</h3>
-        <!-- Anti-OCR Secure Canvas Display (No DOM text for scrapers / AI extensions) -->
+        <!-- Anti-OCR Secure Canvas Display -->
         <div class="task-canvas-wrapper" style="min-height: 120px;">
             <canvas id="st-task-canvas" width="400" height="130"></canvas>
         </div>
@@ -836,8 +849,8 @@
             Виконуйте на чистовику. Запис екрана та копіювання заблоковано апаратним DRM.
         </div>
         <div class="action-bar" style="margin-top: 8px;">
-            <button class="btn-primary" onclick="openStudentExamWorkspace()">
-                ДО МАТЕРІАЛІВ ІСПИТУ
+            <button class="btn-primary" id="btn-student-task-resync" onclick="triggerStudentTaskRefresh()">
+                <i data-lucide="refresh-cw" width="20" height="20"></i> ОНОВИТИ
             </button>
         </div>
     </div>
@@ -850,7 +863,7 @@
             <span class="badge badge-ok">Викладач</span>
         </div>
         <div class="speaker-dashboard">
-            <!-- LEFT COLUMN (STREAMLINED, NO VERTICAL SCROLL) -->
+            <!-- LEFT COLUMN -->
             <div class="speaker-left-col">
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%;">
                     <div id="qr-container"></div>
@@ -861,7 +874,19 @@
                         <button class="icon-btn" onclick="shareId()"><i data-lucide="share-2"></i> Надіслати</button>
                     </div>
                 </div>
-                <div style="width: 100%; margin-top: 6px;">
+                <!-- 20-SEC TIMER SWITCHER -->
+                <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 6px 10px; border-radius: 8px; margin-top: 4px;">
+                    <span style="font-size: 0.75rem; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="timer" style="width:15px;height:15px;color:var(--color-attention-med);"></i>
+                        Автотаймер 20с:
+                    </span>
+                    <label style="position: relative; display: inline-block; width: 38px; height: 20px; margin: 0; cursor: pointer;">
+                        <input type="checkbox" id="timer-toggle-cb" checked onchange="toggleAutoTimer(this.checked)" style="opacity: 0; width: 0; height: 0;">
+                        <span id="timer-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--color-attention-med); transition: .2s; border-radius: 20px;"></span>
+                        <span id="timer-knob" style="position: absolute; height: 14px; width: 14px; left: 21px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%;"></span>
+                    </label>
+                </div>
+                <div style="width: 100%; margin-top: 4px;">
                     <label style="font-size: 0.75rem; font-weight: 700; color: #444; display: block; margin-bottom: 4px;">Загальні матеріали (PDF / Презентація):</label>
                     <input type="text" id="gdrive-input" oninput="resetInputColor()" placeholder="URL завдань (PDF / Google Docs / Slides)">
                     <div id="sync-status" style="display:none; color: var(--color-attention-high); font-weight:700; font-size: 0.8rem; margin-top: 4px;">
@@ -942,7 +967,10 @@
 <div id="task-modal" class="modal-overlay" onclick="toggleTaskModal()">
     <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 500px; text-align: left;">
         <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:8px;">
-            <h3 style="color: var(--color-attention-med);">Моє завдання</h3>
+            <div style="display:flex; gap:6px; align-items:center;">
+                <h3 style="color: var(--color-attention-med);">Моє завдання</h3>
+                <span id="modal-timer-badge" class="badge badge-warn hidden">⏳ 20с</span>
+            </div>
             <span class="badge badge-ok">Активовано</span>
         </div>
         <div class="task-canvas-wrapper" style="min-height: 120px; max-height: 250px; overflow-y: auto;">
@@ -1068,7 +1096,7 @@
     let isDrawing = false;
     let lastX = 0, lastY = 0;
     let pageMarks = {};
-    // WYSIWYG Student Cards State
+    // WYSIWYG Student Cards State & Timers
     let studentCards = []; // Array of { id, name, task, active }
     let registeredStudents = [];
     let studentTasks = {}; // name -> task string
@@ -1079,6 +1107,10 @@
     let myStudentName = "";
     let myIndividualTask = "";
     let isMyTaskActive = false;
+    // AUTO-TIMER 20s STATE
+    let autoTimerEnabled = true;
+    let cardTimers = {}; // cardId -> { remaining: number, interval: id }
+    let studentCountdownInterval = null;
     const lockDigits = [0,0,0,0,0,0,0,0,0];
     let html5QrcodeScanner = null;
     let watermarkInterval = null;
@@ -1095,7 +1127,7 @@
                         id: item.id || ('st_' + Date.now() + '_' + idx),
                         name: item.name || '',
                         task: item.task || '',
-                        active: !!item.active
+                        active: false // Safety default
                     }));
                     syncCardStateToGlobals();
                 }
@@ -1113,6 +1145,9 @@
         initDrmGuards();
         blockScreenRecordingAPIs();
     };
+    function isStudentActive() {
+        return !isLeader && (currentHostId !== null || myStudentName !== "" || isMyTaskActive || examStarted);
+    }
     // --- DRM & ANTI-CHEAT HARDENING (NETFLIX-STYLE BLACKOUT & FORENSICS) ---
     function blockScreenRecordingAPIs() {
         if (navigator.mediaDevices) {
@@ -1121,6 +1156,24 @@
                 triggerDrmCurtain("Запис екрана суворо заборонено апаратним захистом DRM!");
                 return Promise.reject(new DOMException("Screen capture is prohibited by DRM policy", "NotAllowedError"));
             };
+        }
+    }
+    function blackoutSensitiveContent() {
+        const stCanvas = document.getElementById('st-task-canvas');
+        if (stCanvas) {
+            const ctx = stCanvas.getContext('2d');
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, stCanvas.width, stCanvas.height);
+        }
+        const modalCanvas = document.getElementById('modal-task-canvas');
+        if (modalCanvas) {
+            const ctx = modalCanvas.getContext('2d');
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, modalCanvas.width, modalCanvas.height);
+        }
+        if (pdfCanvas) {
+            pdfCtx.fillStyle = '#000000';
+            pdfCtx.fillRect(0, 0, pdfCanvas.width, pdfCanvas.height);
         }
     }
     function initDrmGuards() {
@@ -1143,74 +1196,78 @@
             }
         });
         document.addEventListener('paste', e => {
-            if (!isLeader && examStarted) e.preventDefault();
+            if (!isLeader && isStudentActive()) e.preventDefault();
         });
         document.addEventListener('dragstart', e => e.preventDefault());
         document.addEventListener('drop', e => e.preventDefault());
         document.addEventListener('selectstart', e => {
-            if (!isLeader && examStarted) e.preventDefault();
+            if (!isLeader && isStudentActive()) e.preventDefault();
         });
         document.addEventListener('selectionchange', () => {
-            if (!isLeader && examStarted) {
+            if (!isLeader && isStudentActive()) {
                 const sel = window.getSelection();
                 if (sel && sel.removeAllRanges) sel.removeAllRanges();
             }
         });
-        // Detect Shortcut and Snipping Keys
-        window.addEventListener('keydown', (e) => {
-            if (isLeader) return;
+        // Instant intercept on Capture phase for Snipping and Screenshot keys
+        const interceptKey = (e) => {
+            if (isLeader || !isStudentActive()) return;
             const key = (e.key || '').toLowerCase();
+            const code = (e.code || '').toLowerCase();
             const isCtrlOrMeta = e.ctrlKey || e.metaKey;
-            // PrintScreen, Snip tool, F12, Devtools, Print, Save, Inspect
-            if (e.key === 'PrintScreen' || e.keyCode === 44 ||
-                (isCtrlOrMeta && ['p','s','u','c','x','a'].includes(key)) ||
-                (isCtrlOrMeta && e.shiftKey && ['i','j','c','s','3','4','5'].includes(key)) ||
-                (e.metaKey && e.shiftKey) || 
-                e.key === 'F12') {
+            const isPrintScreen = e.key === 'PrintScreen' || code === 'printscreen' || e.keyCode === 44 || e.which === 44;
+            const isMacScreenshot = e.metaKey && e.shiftKey;
+            const isDevTools = e.key === 'F12' || (isCtrlOrMeta && e.shiftKey && ['i','j','c','s'].includes(key));
+            const isSaveOrPrint = isCtrlOrMeta && ['p','s','u'].includes(key);
+            const isCopyCut = isCtrlOrMeta && ['c','x','a'].includes(key);
+            if (isPrintScreen || isMacScreenshot || isDevTools || isSaveOrPrint || isCopyCut) {
                 e.preventDefault();
                 e.stopPropagation();
+                e.stopImmediatePropagation();
                 scrubClipboard();
-                triggerDrmCurtain("Спроба знімка екрана або забороненої комбінації клавіш блокована!");
-                reportViolation("Заборонена клавіша / скріншот: " + (e.key || e.keyCode));
+                blackoutSensitiveContent();
+                triggerDrmCurtain("Спроба знімка екрана або забороненої комбінації блокована!");
+                reportViolation("Заборонена комбінація / Скріншот: " + (e.key || e.keyCode));
                 return false;
             }
-        }, true);
-        window.addEventListener('keyup', (e) => {
-            if (isLeader) return;
-            if (e.key === 'PrintScreen' || e.keyCode === 44) {
-                scrubClipboard();
-                triggerDrmCurtain("PrintScreen заблоковано апаратним DRM!");
-                reportViolation("PrintScreen (KeyUp)");
-            }
-        });
+        };
+        window.addEventListener('keydown', interceptKey, true);
+        window.addEventListener('keyup', interceptKey, true);
         // Instant Blackout on Blur / Loss of Window Focus (Blocks Windows Snipping Tool & Mac screenshot)
         window.addEventListener('blur', () => {
-            if (!isLeader && examStarted) {
+            if (isStudentActive()) {
                 scrubClipboard();
+                blackoutSensitiveContent();
                 triggerDrmCurtain("Втрата фокусу екрана (можлива спроба скріншота або перемикання вікна)!");
-                reportViolation("Втрата фокусу вікна (Blur)");
+                reportViolation("Втрата фокусу вікна / Можливий скріншот (Blur)");
             }
         });
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden && !isLeader && examStarted) {
+            if (document.hidden && isStudentActive()) {
                 scrubClipboard();
+                blackoutSensitiveContent();
                 triggerDrmCurtain("Згортання або перемикання вкладки під час іспиту!");
                 reportViolation("Вкладку приховано (VisibilityChange)");
             }
         });
         window.addEventListener('pagehide', () => {
-            if (!isLeader && examStarted) scrubClipboard();
+            if (isStudentActive()) scrubClipboard();
         });
         window.addEventListener('beforeprint', (e) => {
             e.preventDefault();
+            blackoutSensitiveContent();
             triggerDrmCurtain("Друк матеріалів іспиту суворо заборонено!");
             reportViolation("Спроба друку");
         });
+        // Periodic clipboard protection
+        setInterval(() => {
+            if (isStudentActive()) scrubClipboard();
+        }, 3000);
     }
     function scrubClipboard() {
         try {
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText('⚠️ [ExamSync DRM: Матеріали іспиту захищено від копіювання]');
+                navigator.clipboard.writeText('⚠️ [ExamSync DRM: Матеріали іспиту захищено від копіювання]').catch(()=>{});
             }
         } catch(e){}
     }
@@ -1218,9 +1275,19 @@
         const curtain = document.getElementById('drm-curtain');
         document.getElementById('drm-curtain-msg').innerText = msg;
         curtain.classList.remove('hidden');
+        document.body.classList.add('drm-blackout');
+        blackoutSensitiveContent();
     }
     function dismissDrmCurtain() {
         document.getElementById('drm-curtain').classList.add('hidden');
+        document.body.classList.remove('drm-blackout');
+        if (isMyTaskActive) {
+            renderTaskToSecureCanvas('st-task-canvas', myIndividualTask, myStudentName, true);
+            renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, true);
+        }
+        if (pdfDoc && examStarted) {
+            renderPage(pageNum);
+        }
     }
     function reportViolation(reason) {
         if (!hostConnection || !hostConnection.open) return;
@@ -1237,7 +1304,7 @@
         wmCanvas.style.display = 'block';
         if (watermarkInterval) clearInterval(watermarkInterval);
         function drawWatermark() {
-            if (isLeader || !examStarted) {
+            if (isLeader || !isStudentActive()) {
                 wmCanvas.style.display = 'none';
                 return;
             }
@@ -1314,7 +1381,7 @@
         canvas.style.width = displayWidth + 'px';
         canvas.style.height = totalHeight + 'px';
         ctx.scale(dpr, dpr);
-        // Security background with micro-noise texture
+        // Security background with micro-noise texture (Anti-OCR protection)
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, displayWidth, totalHeight);
         // Micro watermark on canvas
@@ -1376,6 +1443,55 @@
             setTimeout(() => document.getElementById('teacher-pwd').classList.remove('input-error'), 1000);
         }
     }
+    // --- 20-SEC TIMER MANAGEMENT ---
+    function toggleAutoTimer(enabled) {
+        autoTimerEnabled = enabled;
+        const knob = document.getElementById('timer-knob');
+        const slider = document.getElementById('timer-slider');
+        if (knob && slider) {
+            slider.style.backgroundColor = enabled ? 'var(--color-attention-med)' : '#cbd5e1';
+            knob.style.left = enabled ? '21px' : '3px';
+        }
+        if (!enabled) {
+            Object.keys(cardTimers).forEach(id => clearCardTimer(id));
+            renderTeacherMatrix();
+        }
+    }
+    function clearCardTimer(cardId) {
+        if (cardTimers[cardId]) {
+            clearInterval(cardTimers[cardId].interval);
+            delete cardTimers[cardId];
+        }
+    }
+    function activateSingleCard(card) {
+        card.active = true;
+        const stName = card.name.trim();
+        activeStudentTasks[stName] = true;
+        clearCardTimer(card.id);
+        if (autoTimerEnabled) {
+            cardTimers[card.id] = {
+                remaining: 20,
+                interval: setInterval(() => {
+                    if (!cardTimers[card.id]) return;
+                    cardTimers[card.id].remaining--;
+                    const badge = document.getElementById(`timer-badge-${card.id}`);
+                    if (badge) badge.innerText = `⏳ ${cardTimers[card.id].remaining}с`;
+                    if (cardTimers[card.id].remaining <= 0) {
+                        deactivateSingleCard(card);
+                        renderTeacherMatrix();
+                    }
+                }, 1000)
+            };
+        }
+        sendTaskToStudent(stName, autoTimerEnabled ? 20 : null);
+    }
+    function deactivateSingleCard(card) {
+        card.active = false;
+        const stName = card.name.trim();
+        activeStudentTasks[stName] = false;
+        clearCardTimer(card.id);
+        sendTaskToStudent(stName, null);
+    }
     // --- WYSIWYG CARD & MATRIX LOGIC ---
     function syncCardStateToGlobals() {
         registeredStudents = studentCards.map(c => c.name.trim()).filter(n => n.length > 0);
@@ -1410,10 +1526,10 @@
     function deleteStudentCard(id) {
         const card = studentCards.find(c => c.id === id);
         if (!card) return;
+        clearCardTimer(id);
         const stName = card.name.trim();
         if (card.active && stName) {
-            card.active = false;
-            sendTaskToStudent(stName);
+            deactivateSingleCard(card);
         }
         for (const peerId in studentClaims) {
             if (studentClaims[peerId] === stName) delete studentClaims[peerId];
@@ -1435,7 +1551,7 @@
         card.name = newName;
         syncCardStateToGlobals();
         broadcastStudentList();
-        if (card.active && trimmedNew) sendTaskToStudent(trimmedNew);
+        if (card.active && trimmedNew) sendTaskToStudent(trimmedNew, autoTimerEnabled ? 20 : null);
         updateMatrixCounts();
     }
     function updateCardTask(id, newTask) {
@@ -1445,7 +1561,10 @@
         const stName = card.name.trim();
         if (stName) {
             studentTasks[stName] = newTask;
-            if (card.active) sendTaskToStudent(stName);
+            if (card.active) {
+                const remaining = cardTimers[card.id] ? cardTimers[card.id].remaining : null;
+                sendTaskToStudent(stName, remaining);
+            }
         }
         localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
     }
@@ -1456,19 +1575,22 @@
         if (!stName) {
             return showNotification("Введіть ПІБ студента перед активацією!", true);
         }
-        card.active = !card.active;
-        activeStudentTasks[stName] = card.active;
+        if (card.active) {
+            deactivateSingleCard(card);
+        } else {
+            activateSingleCard(card);
+        }
         localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
-        sendTaskToStudent(stName);
         renderTeacherMatrix();
     }
     function activateAllTasks(state) {
         studentCards.forEach(c => {
-            c.active = state;
             const stName = c.name.trim();
-            if (stName) {
-                activeStudentTasks[stName] = state;
-                sendTaskToStudent(stName);
+            if (!stName) return;
+            if (state) {
+                activateSingleCard(c);
+            } else {
+                deactivateSingleCard(c);
             }
         });
         localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
@@ -1558,6 +1680,8 @@
             const isActive = !!c.active;
             const escapedName = escapeHtml(c.name);
             const escapedTask = escapeHtml(c.task);
+            const timerInfo = cardTimers[c.id];
+            const timerBadge = (isActive && timerInfo) ? `<span id="timer-badge-${c.id}" class="badge badge-warn" style="font-size:0.68rem;">⏳ ${timerInfo.remaining}с</span>` : '';
             html += `
             <div class="student-card ${isActive ? 'active-task' : ''} ${isOnline ? 'online' : ''}">
                 <div class="student-card-header">
@@ -1575,7 +1699,8 @@
                           placeholder="Текст завдання або питання..." 
                           oninput="updateCardTask('${c.id}', this.value)">${escapedTask}</textarea>
                 <div class="student-card-footer">
-                    <div style="display:flex; gap: 4px; align-items:center;">
+                    <div style="display:flex; gap: 4px; align-items:center; flex-wrap: wrap;">
+                        ${timerBadge}
                         ${violations > 0 ? `<span class="badge badge-warn" title="Підозр: ${violations}">⚠️ ${violations}</span>` : ''}
                         ${handRaised ? `<span style="color:#f59e0b; font-size: 0.9rem;" title="Піднято руку">✋</span>` : ''}
                         ${peerId ? '<span class="badge badge-ok" style="font-size:0.65rem;" title="Студент вибрав це ім\'я">Закріплено</span>' : '<span class="badge badge-wait" style="font-size:0.65rem;">Вільний</span>'}
@@ -1589,7 +1714,7 @@
         grid.innerHTML = html;
         lucide.createIcons();
     }
-    function sendTaskToStudent(stName) {
+    function sendTaskToStudent(stName, duration) {
         if (!stName) return;
         const peerId = Object.keys(studentClaims).find(k => studentClaims[k] === stName);
         if (!peerId) return;
@@ -1600,7 +1725,8 @@
                 type: 'INDIVIDUAL_TASK',
                 name: stName,
                 task: isActive ? (studentTasks[stName] || '') : '',
-                active: isActive
+                active: isActive,
+                duration: duration || null
             });
         }
     }
@@ -1655,9 +1781,44 @@
         document.getElementById('loading-msg').innerText = "Підтвердження викладачем...";
         document.getElementById('student-identity-menu').classList.add('hidden');
         document.getElementById('loading-menu').classList.remove('hidden');
+        startForensicWatermarking();
     }
-    function openStudentExamWorkspace() {
-        document.getElementById('ui-layer').classList.add('hidden');
+    // --- STUDENT TASK REFRESH TRIGGER ---
+    function triggerStudentTaskRefresh() {
+        const btn = document.getElementById('btn-student-task-resync');
+        const icon = btn ? btn.querySelector('i') : null;
+        if (icon) icon.classList.add('spin');
+        if (hostConnection && hostConnection.open) {
+            hostConnection.send({
+                type: 'STUDENT_TASK_RESYNC_REQ',
+                name: myStudentName
+            });
+        } else {
+            showNotification("З'єднання втрачено. Перезавантажте сторінку.", true);
+        }
+        setTimeout(() => {
+            if (icon) icon.classList.remove('spin');
+        }, 800);
+    }
+    function updateStudentTimerUI(sec) {
+        const badge = document.getElementById('st-timer-badge');
+        const modalBadge = document.getElementById('modal-timer-badge');
+        if (sec !== null && sec > 0) {
+            if (badge) {
+                badge.innerText = `⏳ ${sec}с`;
+                badge.classList.remove('hidden');
+            }
+            if (modalBadge) {
+                modalBadge.innerText = `⏳ ${sec}с`;
+                modalBadge.classList.remove('hidden');
+            }
+        } else if (sec === 0) {
+            if (badge) badge.innerText = `Час вийшов`;
+            if (modalBadge) modalBadge.innerText = `Час вийшов`;
+        } else {
+            if (badge) badge.classList.add('hidden');
+            if (modalBadge) modalBadge.classList.add('hidden');
+        }
     }
     function toggleTaskModal() {
         if (!isMyTaskActive) {
@@ -2260,18 +2421,36 @@
                         studentClaims[conn.peer] = data.name;
                         if (!studentViolations[conn.peer]) studentViolations[conn.peer] = 0;
                         conn.send({ type: 'CLAIM_RESULT', success: true, name: data.name });
-                        if (activeStudentTasks[data.name]) {
-                            conn.send({
-                                type: 'INDIVIDUAL_TASK',
-                                name: data.name,
-                                task: studentTasks[data.name] || '',
-                                active: true
-                            });
-                        }
+                        const card = studentCards.find(c => c.name.trim() === data.name.trim());
+                        const isActive = card ? !!card.active : false;
+                        const remaining = (card && cardTimers[card.id]) ? cardTimers[card.id].remaining : null;
+                        conn.send({
+                            type: 'INDIVIDUAL_TASK',
+                            name: data.name,
+                            task: isActive ? (studentTasks[data.name] || '') : '',
+                            active: isActive,
+                            duration: remaining
+                        });
                         broadcast({ type: 'CLAIMS_UPDATE', claims: studentClaims });
                         renderTeacherMatrix();
                         if (examStarted) syncSingleClient(client);
                     }
+                }
+                if (data.type === 'STUDENT_TASK_RESYNC_REQ') {
+                    const stName = data.name || studentClaims[conn.peer];
+                    if (stName) {
+                        const card = studentCards.find(c => c.name.trim() === stName.trim());
+                        const isActive = card ? !!card.active : false;
+                        const remaining = (card && cardTimers[card.id]) ? cardTimers[card.id].remaining : null;
+                        conn.send({
+                            type: 'INDIVIDUAL_TASK',
+                            name: stName,
+                            task: isActive ? (studentTasks[stName] || '') : '',
+                            active: isActive,
+                            duration: remaining
+                        });
+                    }
+                    if (examStarted) syncSingleClient(client);
                 }
                 if (data.type === 'VIOLATION') {
                     studentViolations[conn.peer] = (studentViolations[conn.peer] || 0) + 1;
@@ -2436,6 +2615,7 @@
                 if (data.type === 'CLAIM_RESULT') {
                     if (data.success) {
                         myStudentName = data.name;
+                        startForensicWatermarking();
                         document.getElementById('loading-msg').innerText = "Ідентифіковано! Очікуйте активації вашого завдання викладачем...";
                     } else {
                         showNotification(data.msg || "Помилка вибору імені", true);
@@ -2446,7 +2626,7 @@
                         }
                     }
                 }
-                // INDIVIDUAL TASK ACTIVATION & SECURITY TRACKING
+                // INDIVIDUAL TASK ACTIVATION, TIMERS & SECURITY TRACKING
                 if (data.type === 'INDIVIDUAL_TASK') {
                     isMyTaskActive = !!data.active;
                     myIndividualTask = isMyTaskActive ? (data.task || '') : '';
@@ -2455,6 +2635,10 @@
                     const loadingMenuEl = document.getElementById('loading-menu');
                     const loadingMsgEl = document.getElementById('loading-msg');
                     const taskBtn = document.getElementById('btn-my-task');
+                    if (studentCountdownInterval) {
+                        clearInterval(studentCountdownInterval);
+                        studentCountdownInterval = null;
+                    }
                     renderTaskToSecureCanvas('st-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
                     renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
                     if (isMyTaskActive) {
@@ -2463,6 +2647,25 @@
                             taskBtn.classList.remove('task-inactive');
                             taskBtn.title = "Переглянути активне завдання";
                         }
+                        if (data.duration && data.duration > 0) {
+                            let timeLeft = data.duration;
+                            updateStudentTimerUI(timeLeft);
+                            studentCountdownInterval = setInterval(() => {
+                                timeLeft--;
+                                if (timeLeft <= 0) {
+                                    clearInterval(studentCountdownInterval);
+                                    studentCountdownInterval = null;
+                                    updateStudentTimerUI(0);
+                                    isMyTaskActive = false;
+                                    renderTaskToSecureCanvas('st-task-canvas', myIndividualTask, myStudentName, false);
+                                    renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, false);
+                                } else {
+                                    updateStudentTimerUI(timeLeft);
+                                }
+                            }, 1000);
+                        } else {
+                            updateStudentTimerUI(null);
+                        }
                         if (document.getElementById('ui-layer').classList.contains('hidden')) {
                             showNotification("Викладач щойно активував ваше персональне завдання! Відкрийте розділ «Завдання» у меню.", false);
                         } else {
@@ -2470,7 +2673,9 @@
                             document.getElementById('student-identity-menu').classList.add('hidden');
                             taskCardEl.classList.remove('hidden');
                         }
+                        startForensicWatermarking();
                     } else {
+                        updateStudentTimerUI(null);
                         if (taskModalEl) taskModalEl.style.display = 'none';
                         if (taskBtn) {
                             taskBtn.classList.add('task-inactive');
@@ -2482,10 +2687,9 @@
                             loadingMsgEl.innerHTML = `
                                 <span style="color:var(--color-error); font-weight:700;">Завдання деактивовано викладачем</span><br>
                                 <span style="font-size:0.8rem; font-weight:500; color:#666; margin-top:8px; display:block;">
-                                    Доступ до питання призупинено. Очікуйте вказівки викладача.
+                                    Доступ до питання призупинено або час вичерпано. Очікуйте вказівки викладача.
                                 </span>`;
                         }
-                        showNotification("Увага! Викладач призупинив доступ до вашого завдання. Питання приховано.", true);
                     }
                 }
                 if (data.type === 'START_EXAM') {
