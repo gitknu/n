@@ -35,7 +35,6 @@
         user-select: none;
         -webkit-user-select: none;
     }
-    /* ЗАХИСТ ВІД ДРУКУ */
     @media print {
         html, body { display: none !important; visibility: hidden !important; }
     }
@@ -73,7 +72,7 @@
         box-shadow: var(--shadow);
         border: 2px solid var(--color-border);
         gap: 8px;
-        transition: max-width 0.3s ease;
+        transition: all 0.3s ease;
     }
     .hidden { display: none !important; }
     h3 { margin: 0; color: var(--color-text); font-weight: 700; font-size: 1.15rem; flex-shrink: 0; }
@@ -84,7 +83,6 @@
         width: 100%; max-width: 500px;
         height: 100%; padding: 10px 0;
         justify-content: center;
-        transition: all 0.3s ease;
     }
     .role-btn {
         flex: 1; max-height: 40vh; 
@@ -103,7 +101,7 @@
     .role-btn:active { transform: scale(0.97); }
     .role-listener { background-color: var(--color-attention-high); border: 2px solid var(--color-attention-high); }
     .role-speaker { background-color: var(--color-attention-med); border: 2px solid var(--color-attention-med); }
-    /* --- ACTION BAR (Bottom Buttons) --- */
+    /* --- ACTION BAR --- */
     .action-bar {
         display: flex; width: 100%; gap: 10px; margin-top: 6px; flex-shrink: 0;
     }
@@ -132,7 +130,7 @@
     }
     button.btn-secondary:active { background: #f0f8ff; }
     .icon-btn-group {
-        display: flex; gap: 8px; margin-top: 5px;
+        display: flex; gap: 8px; margin-top: 4px;
     }
     .icon-btn {
         background: #f0f0f0; border: 1px solid #ddd;
@@ -147,69 +145,191 @@
     .btn-success { background: #e8f5e9; color: var(--color-success); border-color: var(--color-success); }
     .btn-approve { background: #e8f5e9; color: var(--color-success); border-color: var(--color-success); font-weight: 700; }
     input[type="text"], input[type="password"], input[type="tel"], select, textarea {
-        padding: 0.6rem; 
+        padding: 0.55rem; 
         width: 100%; background: #fff; 
         border: 2px solid var(--color-attention-med); color: #111; 
         border-radius: 0.8rem; outline: none;
-        font-size: 0.95rem; text-align: left;
+        font-size: 0.9rem; text-align: left;
         font-family: 'Montserrat', sans-serif; font-weight: 600; flex-shrink: 0;
         transition: border-color 0.3s, background-color 0.3s;
     }
     textarea { 
-        resize: vertical; min-height: 80px; font-weight: 500; font-size: 0.85rem; 
-        line-height: 1.4;
+        resize: vertical; min-height: 70px; font-weight: 500; font-size: 0.8rem; 
+        line-height: 1.35;
     }
     textarea::placeholder {
         color: #999;
         font-style: italic;
-        opacity: 0.85;
     }
     select { cursor: pointer; background: #fff; }
     input.input-success { border-color: var(--color-success) !important; background-color: #e8f5e9 !important; color: var(--color-success) !important; }
     input.input-error { border-color: var(--color-error) !important; background-color: #ffebee !important; color: var(--color-error) !important; }
-    /* --- DESKTOP ADAPTIVE LAYOUT FOR TEACHER & MENUS --- */
-    .speaker-grid {
+    /* --- TEACHER DESKTOP WIDESCREEN & MATRIX STYLES --- */
+    .speaker-dashboard {
         display: flex;
         flex-direction: column;
+        gap: 12px;
+        width: 100%;
+        height: 100%;
+    }
+    .matrix-wrapper {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        flex: 1;
+        min-height: 0;
+        border: 1px solid var(--color-border);
+        border-radius: 12px;
+        background: #fdfdfd;
+        padding: 10px;
+    }
+    .matrix-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #eee;
+    }
+    .matrix-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
         gap: 10px;
+        overflow-y: auto;
+        padding-right: 4px;
+        flex: 1;
+        min-height: 160px;
+    }
+    .student-card {
+        background: #ffffff;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        text-align: left;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .student-card.active-task {
+        border-color: var(--color-success);
+        background: #fcfdfc;
+        box-shadow: 0 2px 10px rgba(46, 125, 50, 0.15);
+    }
+    .student-card.online {
+        border-left: 5px solid var(--color-success);
+    }
+    .student-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .student-name {
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: #111;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 140px;
+    }
+    .student-card-task {
+        font-size: 0.75rem;
+        background: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 6px;
+        min-height: 48px;
+        max-height: 70px;
+        overflow-y: auto;
+        font-family: inherit;
+        font-weight: 500;
+        resize: none;
         width: 100%;
     }
-    @media (min-width: 768px) {
-        #ui-layer { padding: 24px; }
+    .student-card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 6px;
+        margin-top: auto;
+    }
+    .btn-matrix-toggle {
+        border: none;
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        text-transform: uppercase;
+        transition: all 0.2s;
+    }
+    .btn-matrix-activate {
+        background: var(--color-attention-med);
+        color: white;
+    }
+    .btn-matrix-activate:hover {
+        background: #083c6c;
+    }
+    .btn-matrix-deactivate {
+        background: #ffebee;
+        color: var(--color-error);
+        border: 1px solid var(--color-error);
+    }
+    /* --- DESKTOP ADAPTATION (WIDESCREEN NO VERTICAL SCROLL) --- */
+    @media (min-width: 900px) {
+        #ui-layer { padding: 20px; }
         #role-menu {
             flex-direction: row;
             max-width: 760px;
-            max-height: 340px;
-            gap: 25px;
-            align-items: stretch;
+            max-height: 320px;
+            gap: 24px;
         }
         .role-btn {
-            max-height: 100%;
             height: 100%;
+            max-height: 100%;
             padding: 2.5rem 1.5rem;
             font-size: 1.6rem;
         }
         #speaker-menu.card {
-            max-width: 860px;
-            padding: 1.25rem 1.6rem;
-            max-height: 94vh;
+            max-width: 1380px;
+            width: 96vw;
+            height: 92vh;
+            max-height: 92vh;
+            padding: 1.2rem;
+            overflow: hidden;
         }
-        .speaker-grid {
+        .speaker-dashboard {
             display: grid;
-            grid-template-columns: 320px 1fr;
-            gap: 16px 24px;
-            align-items: start;
+            grid-template-columns: 310px 1fr;
+            gap: 16px;
+            height: calc(100% - 40px);
+            overflow: hidden;
             text-align: left;
         }
-        .area-session { grid-column: 1; grid-row: 1; }
-        .area-pdf { grid-column: 1; grid-row: 2; }
-        .area-students { grid-column: 2; grid-row: 1; }
-        .area-roster { grid-column: 2; grid-row: 2; }
-        .area-actions { grid-column: 1 / -1; margin-top: 8px; }
-        #students-textarea { min-height: 110px; }
-        .roster-card { max-height: 160px; }
-        #listener-menu.card, #student-identity-menu.card, #loading-menu.card {
-            max-width: 500px;
+        .speaker-left-col {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            height: 100%;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+        .speaker-right-col {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 0;
+            overflow: hidden;
+        }
+        #listener-menu.card, #student-identity-menu.card, #loading-menu.card, #student-task-card.card {
+            max-width: 520px;
             padding: 1.5rem;
         }
     }
@@ -232,7 +352,7 @@
             background: #c8e6c9 !important;
         }
     }
-    /* --- LOCKER INTERFACE (DIPLOMAT STYLE) --- */
+    /* --- LOCKER INTERFACE --- */
     #lock-ui-wrapper {
         display: flex; flex-direction: column; width: 100%; align-items: center;
         margin: 5px 0; position: relative; 
@@ -291,10 +411,10 @@
     }
     #html5-qrcode-anchor-scan-type-change { display: none !important; }
     #qr-container {
-        background:white; padding:5px; display:inline-flex; 
+        background:white; padding:4px; display:inline-flex; 
         align-items: center; justify-content: center;
         border: 2px solid var(--color-attention-med); border-radius: 10px;
-        flex-shrink: 1; max-height: 25vh; aspect-ratio: 1/1;
+        flex-shrink: 1; max-height: 20vh; aspect-ratio: 1/1;
     }
     #qr-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
     /* --- PDF VIEWER --- */
@@ -316,12 +436,6 @@
         position: absolute; top: 0; left: 0; width: 100%; height: 100%;
         touch-action: none; cursor: crosshair; pointer-events: none; 
     }
-    /* --- WATERMARK PROTECTION OVERLAY --- */
-    #watermark-layer {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        pointer-events: none; z-index: 45; opacity: 0.85;
-        background-repeat: repeat;
-    }
     /* --- ANTI-CHEAT SCREEN GUARD --- */
     #screen-guard {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -332,7 +446,7 @@
     #screen-guard i { width: 72px; height: 72px; margin-bottom: 15px; color: #ff3333; }
     #screen-guard h2 { font-size: 1.5rem; margin: 0 0 10px 0; color: #ffffff; }
     #screen-guard p { max-width: 450px; font-size: 0.95rem; color: #ffcccc; margin: 0 0 20px 0; }
-    /* HAND OVERLAY */
+    /* HAND & OFFLINE OVERLAYS */
     #hand-overlay {
         position: absolute; top: 10px; left: 10px;
         background: rgba(255, 255, 255, 0.95);
@@ -440,23 +554,12 @@
     #fs-hand:active { transform: scale(0.95); }
     .fs-btn-active { background-color: var(--color-hand) !important; color: white !important; border: none !important; }
     .id-display {
-        font-size: 1.6rem; font-weight: 800; color: var(--color-attention-med);
+        font-size: 1.4rem; font-weight: 800; color: var(--color-attention-med);
         background: #f0f8ff; padding: 4px 8px; border-radius: 10px;
         border: 2px dashed var(--color-attention-med); letter-spacing: 2px;
         user-select: text; flex-shrink: 0;
     }
     .id-label { font-size: 0.7rem; text-transform: uppercase; color: #666; font-weight: 700; }
-    /* Teacher Roster Styling */
-    .roster-card {
-        width: 100%; border: 1px solid #ddd; border-radius: 8px;
-        max-height: 120px; overflow-y: auto; text-align: left;
-        background: #fafafa; font-size: 0.8rem; padding: 5px;
-    }
-    .roster-row {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 4px 6px; border-bottom: 1px solid #eee;
-    }
-    .roster-row:last-child { border-bottom: none; }
     .badge {
         padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 700;
     }
@@ -466,16 +569,13 @@
 </style>
 </head>
 <body>
-<!-- ANTI-CHEAT CURTAIN (TRIGGERED ON SCREEN CAPTURE / BLUR) -->
 <div id="screen-guard" class="hidden">
     <i data-lucide="shield-alert"></i>
     <h2>УВАГА: ЗАХИСТ ВІД СПИСУВАННЯ</h2>
     <p id="screen-guard-msg">Спроба створення знімка екрана або перемикання вікна зафіксована! Дані передано викладачу.</p>
     <button class="btn-primary" style="max-width: 260px;" onclick="dismissGuard()">ПОВЕРНУТИСЬ ДО ТЕСТУ</button>
 </div>
-<!-- 1. UI LAYER -->
 <div id="ui-layer">
-    <!-- STEP 1: ROLE SELECTION -->
     <div id="role-menu">
         <button class="role-btn role-listener" onclick="setupListener()">
             <div class="btn-inner">
@@ -490,7 +590,6 @@
             </div>
         </button>
     </div>
-    <!-- STEP 2A: STUDENT LOCKER & SCANNER -->
     <div id="listener-menu" class="card hidden">
         <h3>Підключення до сесії</h3>
         <p class="card-desc">Відскануйте QR екзамену або введіть 9-значний код</p>
@@ -569,11 +668,10 @@
             </button>
         </div>
     </div>
-    <!-- STEP 2B: STUDENT IDENTITY CLAIM MENU -->
     <div id="student-identity-menu" class="card hidden">
         <i data-lucide="user-check" width="48" height="48" style="color: var(--color-attention-high);"></i>
         <h3>Ідентифікація студента</h3>
-        <p class="card-desc">Оберіть своє прізвище зі списку групи. Воно буде прив'язано до вашої сесії.</p>
+        <p class="card-desc">Оберіть своє прізвище зі списку групи. Воно закріпиться за вами на весь іспит.</p>
         <div style="width: 100%; text-align: left; margin: 8px 0;">
             <label style="font-size: 0.75rem; font-weight:700; color: #555;">Оберіть себе зі списку:</label>
             <select id="student-select">
@@ -581,7 +679,7 @@
             </select>
         </div>
         <div style="font-size: 0.75rem; color: #666; background: #fff8e1; border: 1px solid #ffe082; padding: 8px; border-radius: 8px; line-height: 1.3;">
-            ⚠️ <b>Увага:</b> Екран захищено від скріншотів та копіювання. Ваше ПІБ наноситься у вигляді водяного знаку.
+            ⚠️ <b>Увага:</b> Екран захищено від скріншотів, копіювання та перемикання вікон.
         </div>
         <div class="action-bar" style="margin-top: 10px;">
             <button class="btn-secondary" onclick="location.reload()">
@@ -592,70 +690,89 @@
             </button>
         </div>
     </div>
-    <!-- STEP 2C: TEACHER DASHBOARD (DESKTOP & MOBILE ADAPTIVE) -->
+    <div id="student-task-card" class="card hidden" style="border-color: var(--color-attention-med);">
+        <div style="display:flex; justify-content: space-between; align-items:center; width: 100%;">
+            <span class="badge badge-ok">Завдання активовано</span>
+            <span id="st-badge-name" style="font-weight: 700; font-size: 0.85rem; color: var(--color-attention-med);"></span>
+        </div>
+        <h3 style="margin-top: 6px;">Ваше персональне завдання</h3>
+        <div id="st-task-text" style="width: 100%; min-height: 120px; background: #fdfdfd; border: 2px solid #ddd; border-radius: 10px; padding: 12px; text-align: left; font-size: 0.95rem; font-weight: 600; line-height: 1.4; color: #111; user-select: text;">
+            Очікування завдання...
+        </div>
+        <div style="font-size: 0.75rem; color: #666; text-align: left; width: 100%;">
+            Виконуйте на чистовику. Не перемикайте вкладку.
+        </div>
+        <div class="action-bar" style="margin-top: 8px;">
+            <button class="btn-primary" onclick="openStudentExamWorkspace()">
+                ДО МАТЕРІАЛІВ ІСПИТУ
+            </button>
+        </div>
+    </div>
     <div id="speaker-menu" class="card hidden">
         <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; border-bottom: 1px solid #eee; padding-bottom: 6px;">
-            <h3>Панель Викладача</h3>
-            <span class="badge badge-ok">Авторизовано</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="layout-grid" style="color: var(--color-attention-med);"></i>
+                <h3 style="font-size: 1.1rem;">Панель Керування Іспитом</h3>
+            </div>
+            <span class="badge badge-ok">Викладач</span>
         </div>
-        <div class="speaker-grid">
-            <!-- Left Area: Session Connection -->
-            <div class="area-session" style="display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%;">
-                <div id="qr-container"></div>
-                <span class="id-label">Код екзамену</span>
-                <div id="meeting-id-display" class="id-display">...</div>
-                <div class="icon-btn-group">
-                    <button class="icon-btn" id="btn-copy-id" onclick="copyId()">
-                        <i data-lucide="copy"></i> Копія
+        <div class="speaker-dashboard">
+            <div class="speaker-left-col">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%;">
+                    <div id="qr-container"></div>
+                    <span class="id-label">Код екзамену</span>
+                    <div id="meeting-id-display" class="id-display">...</div>
+                    <div class="icon-btn-group">
+                        <button class="icon-btn" id="btn-copy-id" onclick="copyId()"><i data-lucide="copy"></i> Копія</button>
+                        <button class="icon-btn" onclick="shareId()"><i data-lucide="share-2"></i> Надіслати</button>
+                    </div>
+                </div>
+                <div style="width: 100%;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                        <label style="font-size: 0.72rem; font-weight: 700; color: #444;">Студенти та завдання (ПІБ | Завдання):</label>
+                        <span id="teacher-roster-status" class="badge badge-wait">Не затверджено</span>
+                    </div>
+                    <textarea id="students-textarea" placeholder="Приклад:&#10;Бондаренко Андрій | Білет №1: Дослідити екстремуми функції&#10;Коваленко Марія | Білет №2: Знайти визначений інтеграл&#10;Мельник Олександр | Білет №3: Розв'язати дифрівняння"></textarea>
+                    <button class="icon-btn btn-approve" style="margin-top: 4px; width: 100%; justify-content: center;" onclick="saveAndBroadcastStudents()">
+                        <i data-lucide="check-circle"></i> Затвердити та надіслати список
                     </button>
-                    <button class="icon-btn" onclick="shareId()">
-                        <i data-lucide="share-2"></i> Надіслати
+                </div>
+                <div style="width: 100%;">
+                    <label style="font-size: 0.72rem; font-weight: 700; color: #444; display: block; margin-bottom: 2px;">Загальні матеріали (PDF / Презентація):</label>
+                    <input type="text" id="gdrive-input" oninput="resetInputColor()" placeholder="URL завдань (PDF / Google Docs / Slides)">
+                    <div id="sync-status" style="display:none; color: var(--color-attention-high); font-weight:700; font-size: 0.8rem; margin-top: 2px;">
+                        <i data-lucide="loader-2" class="spin"></i> Завантаження...
+                    </div>
+                </div>
+                <div class="action-bar" style="margin-top: auto;">
+                    <button class="btn-secondary" onclick="location.reload()"><i data-lucide="arrow-left" width="20"></i></button>
+                    <button id="btn-start-sync" onclick="startDistribution()" class="btn-primary" disabled>
+                        ТРАНСЛЯЦІЯ ДЛЯ ВСІХ
                     </button>
                 </div>
             </div>
-            <!-- Student List Input -->
-            <div class="area-students" style="width: 100%; text-align: left;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <label style="font-size: 0.75rem; font-weight: 700; color: #444;">Список студентів (по одному на рядок):</label>
-                    <span id="teacher-roster-status" class="badge badge-wait">Не затверджено</span>
-                </div>
-                <textarea id="students-textarea" placeholder="Приклад (по одному на рядок):&#10;Бондаренко Андрій&#10;Коваленко Марія&#10;Мельник Олександр&#10;Шевченко Дарина&#10;Ткаченко Дмитро"></textarea>
-                <button class="icon-btn btn-approve" style="margin-top: 4px; width: 100%; justify-content: center;" onclick="saveAndBroadcastStudents()">
-                    <i data-lucide="check-circle"></i> Затвердити та надіслати список
-                </button>
-            </div>
-            <!-- Live Roster -->
-            <div class="area-roster" style="width: 100%; text-align: left;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; margin-bottom: 4px;">
-                    <span>Моніторинг студентів:</span>
-                    <span id="speaker-user-count" style="color: var(--color-attention-med);">0 онлайн</span>
-                </div>
-                <div class="roster-card" id="students-roster-list">
-                    <div style="color: #888; text-align: center; padding: 12px; font-size: 0.8rem;">
-                        Список студентів ще не затверджено.<br>Введіть прізвища та натисніть «Затвердити та надіслати список».
+            <div class="speaker-right-col">
+                <div class="matrix-wrapper">
+                    <div class="matrix-toolbar">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 0.85rem; font-weight: 700; color: #333;">МАТРИЦЯ СТУДЕНТІВ:</span>
+                            <span id="speaker-user-count" class="badge badge-ok">0 онлайн</span>
+                            <span id="matrix-active-count" class="badge badge-wait">0 активно</span>
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="icon-btn" onclick="activateAllTasks(true)"><i data-lucide="play"></i> Всім</button>
+                            <button class="icon-btn" onclick="activateAllTasks(false)"><i data-lucide="square"></i> Зупинити всі</button>
+                        </div>
+                    </div>
+                    <div class="matrix-grid" id="teacher-matrix-grid">
+                        <div style="grid-column: 1/-1; color: #888; text-align: center; padding: 25px; font-size: 0.85rem;">
+                            Введіть студентів та натисніть «Затвердити та надіслати список» для відкриття матриці.
+                        </div>
                     </div>
                 </div>
             </div>
-            <!-- PDF Input -->
-            <div class="area-pdf" style="width: 100%; text-align: left;">
-                <label style="font-size: 0.75rem; font-weight: 700; color: #444; display: block; margin-bottom: 4px;">Матеріали завдань:</label>
-                <input type="text" id="gdrive-input" oninput="resetInputColor()" placeholder="URL завдань (PDF / Google Docs / Slides)">
-                <div id="sync-status" style="display:none; color: var(--color-attention-high); font-weight:700; font-size: 0.9rem; margin-top: 4px;">
-                    <i data-lucide="loader-2" class="spin"></i> Завантаження екзамену...
-                </div>
-            </div>
-            <!-- Action Bar -->
-            <div class="area-actions action-bar">
-                <button class="btn-secondary" onclick="location.reload()">
-                    <i data-lucide="arrow-left" width="24" height="24"></i>
-                </button>
-                <button id="btn-start-sync" onclick="startDistribution()" class="btn-primary" disabled>
-                    РОЗПОЧАТИ ІСПИТ
-                </button>
-            </div>
         </div>
     </div>
-    <!-- LOADING SCREEN -->
     <div id="loading-menu" class="card hidden" style="justify-content: center; border-color: var(--color-attention-med);">
         <i data-lucide="loader-2" class="spin" style="color: var(--color-attention-med); width:56px; height:56px;"></i>
         <h3 id="loading-msg" style="margin-top: 15px; line-height: 1.4;">З'єднання...</h3>
@@ -664,7 +781,6 @@
         </button>
     </div>
 </div>
-<!-- 2. TEACHER AUTH MODAL -->
 <div id="teacher-auth-modal" class="modal-overlay">
     <div class="modal-content">
         <i data-lucide="lock" width="48" height="48" style="color: var(--color-attention-med); margin-bottom: 10px;"></i>
@@ -678,7 +794,18 @@
         </div>
     </div>
 </div>
-<!-- 3. MAIN VIEWER -->
+<div id="task-modal" class="modal-overlay" onclick="toggleTaskModal()">
+    <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 500px; text-align: left;">
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:8px;">
+            <h3 style="color: var(--color-attention-med);">Моє завдання</h3>
+            <span class="badge badge-ok">Активовано</span>
+        </div>
+        <div id="modal-task-text" style="width: 100%; min-height: 100px; max-height: 250px; overflow-y: auto; background: #fdfdfd; border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-weight: 600; font-size: 0.95rem; line-height: 1.4; user-select: text;">
+            Немає активного завдання
+        </div>
+        <button class="btn-secondary" style="margin-top:15px; width: 100%;" onclick="toggleTaskModal()">ЗАКРИТИ</button>
+    </div>
+</div>
 <div id="offline-indicator" class="hidden">
     <i data-lucide="wifi-off" width="20" height="20"></i>
     <span>Одиночний режим</span>
@@ -689,17 +816,12 @@
         <div id="qrcode-modal-tgt"></div>
         <div id="qr-modal-id" class="id-display" style="font-size:1.5rem; margin-top:15px;"></div>
         <div class="icon-btn-group" style="margin-top: 15px;">
-            <button class="icon-btn" onclick="copyId()">
-                <i data-lucide="copy"></i> Копіювати
-            </button>
-            <button class="icon-btn" onclick="shareId()">
-                <i data-lucide="share-2"></i> Надіслати
-            </button>
+            <button class="icon-btn" onclick="copyId()"><i data-lucide="copy"></i> Копіювати</button>
+            <button class="icon-btn" onclick="shareId()"><i data-lucide="share-2"></i> Надіслати</button>
         </div>
         <button class="btn-secondary" style="margin-top:20px;" onclick="toggleQR()">ЗАКРИТИ</button>
     </div>
 </div>
-<!-- TEACHER LIVE MONITOR MODAL -->
 <div id="roster-modal" class="modal-overlay" onclick="toggleRosterModal()">
     <div class="modal-content" onclick="event.stopPropagation()" style="max-height: 80vh; overflow-y: auto;">
         <h3>Журнал студентів</h3>
@@ -718,12 +840,8 @@
 <div id="zone-prev" class="touch-zone" onclick="onPrevPage()"></div>
 <div id="zone-next" class="touch-zone" onclick="onNextPage()"></div>
 <div id="fs-controls">
-    <div id="fs-page-info">
-        <span id="fs_page_num">--</span> / <span id="fs_page_count">--</span>
-    </div>
-    <button id="fs-exit" onclick="exitFullScreen()">
-        <i data-lucide="minimize" width="24" height="24"></i>
-    </button>
+    <div id="fs-page-info"><span id="fs_page_num">--</span> / <span id="fs_page_count">--</span></div>
+    <button id="fs-exit" onclick="exitFullScreen()"><i data-lucide="minimize" width="24" height="24"></i></button>
     <button id="fs-hand" onclick="toggleHand()">
         <svg class="hand-timer-svg" viewBox="0 0 36 36">
             <path class="hand-timer-path" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -732,8 +850,6 @@
     </button>
 </div>
 <div id="pdf-container">
-    <!-- WATERMARK OVERLAY -->
-    <div id="watermark-layer"></div>
     <div id="hand-overlay" class="hidden bounce">
         <i data-lucide="hand" width="24" height="24" fill="#f59e0b" stroke="none"></i>
         <span id="hand-count">0</span>
@@ -745,16 +861,13 @@
 </div>
 <div id="toolbar">
     <button class="tool-btn spk-only hidden" onclick="toggleQR()">
-        <div class="btn-inner">
-            <i data-lucide="qr-code" width="24" height="24"></i>
-            <span>QR</span>
-        </div>
+        <div class="btn-inner"><i data-lucide="qr-code" width="24" height="24"></i><span>QR</span></div>
     </button>
     <button class="tool-btn spk-only hidden" onclick="toggleRosterModal()">
-        <div class="btn-inner">
-            <i data-lucide="users" width="24" height="24"></i>
-            <span id="user-count-val">0</span>
-        </div>
+        <div class="btn-inner"><i data-lucide="users" width="24" height="24"></i><span id="user-count-val">0</span></div>
+    </button>
+    <button class="tool-btn lst-only hidden" id="btn-my-task" onclick="toggleTaskModal()">
+        <div class="btn-inner"><i data-lucide="file-text" width="24" height="24"></i><span>Завдання</span></div>
     </button>
     <button class="tool-btn lst-only hidden" id="btn-hand" onclick="toggleHand()">
         <div class="btn-inner">
@@ -766,47 +879,26 @@
         </div>
     </button>
     <button class="tool-btn lst-only hidden" onclick="triggerResync()">
-        <div class="btn-inner">
-            <i data-lucide="refresh-cw" width="24" height="24"></i>
-            <span id="resync-text">Оновити</span>
-        </div>
+        <div class="btn-inner"><i data-lucide="refresh-cw" width="24" height="24"></i><span id="resync-text">Оновити</span></div>
     </button>
     <button class="tool-btn lst-only hidden" onclick="enterFullScreen()">
-        <div class="btn-inner">
-            <i data-lucide="maximize" width="24" height="24"></i>
-            <span>Full</span>
-        </div>
+        <div class="btn-inner"><i data-lucide="maximize" width="24" height="24"></i><span>Full</span></div>
     </button>
     <button class="tool-btn spk-only hidden" id="prev" onclick="onPrevPage()">
-        <div class="btn-inner">
-            <i data-lucide="arrow-left" width="24" height="24"></i>
-            <span>Назад</span>
-        </div>
+        <div class="btn-inner"><i data-lucide="arrow-left" width="24" height="24"></i><span>Назад</span></div>
     </button>
-    <div id="page-info">
-        <span id="page_num">--</span> / <span id="page_count">--</span>
-    </div>
+    <div id="page-info"><span id="page_num">--</span> / <span id="page_count">--</span></div>
     <button class="tool-btn spk-only hidden" id="next" onclick="onNextPage()">
-        <div class="btn-inner">
-            <i data-lucide="arrow-right" width="24" height="24"></i>
-            <span>Далі</span>
-        </div>
+        <div class="btn-inner"><i data-lucide="arrow-right" width="24" height="24"></i><span>Далі</span></div>
     </button>
     <button class="tool-btn" id="rotate" onclick="onRotate()">
-        <div class="btn-inner">
-            <i data-lucide="rotate-cw" width="24" height="24"></i>
-            <span>Оберт</span>
-        </div>
+        <div class="btn-inner"><i data-lucide="rotate-cw" width="24" height="24"></i><span>Оберт</span></div>
     </button>
     <button class="tool-btn danger spk-only hidden" id="eraser-btn" onclick="clearDrawings(true)">
-        <div class="btn-inner">
-            <i data-lucide="eraser" width="24" height="24"></i>
-            <span>Стерти</span>
-        </div>
+        <div class="btn-inner"><i data-lucide="eraser" width="24" height="24"></i><span>Стерти</span></div>
     </button>
 </div>
 <script>
-    // --- BCRYPT & SECURITY CONFIG ---
     const TEACHER_BCRYPT_HASH = "$2a$12$ykCenGR6FVUijT0J9MOm2Oq790lGzqSbf171OFb8hw6wxVu0ooe7i";
     const LANDSCAPE_ROTATION_DEG = 0; 
     const APP_PREFIX = "exam_sync_";
@@ -831,13 +923,16 @@
     let isDrawing = false;
     let lastX = 0, lastY = 0;
     let pageMarks = {};
-    // Exam-specific state (Real students only & Approval flow)
+    // Exam-specific state (Real students, Tasks, Matrix)
     let registeredStudents = [];
+    let studentTasks = {}; // name -> task string
+    let activeStudentTasks = {}; // name -> boolean
     let studentsApproved = false;
     let studentClaims = {}; // peerId -> studentName
     let studentViolations = {}; // peerId -> count
     let myStudentName = "";
-    let watermarkInterval = null;
+    let myIndividualTask = "";
+    let isMyTaskActive = false;
     const lockDigits = [0,0,0,0,0,0,0,0,0];
     let html5QrcodeScanner = null;
     lucide.createIcons();
@@ -845,19 +940,18 @@
     window.onload = () => {
         document.documentElement.style.setProperty('--landscape-rotation', LANDSCAPE_ROTATION_DEG + 'deg');
         // Load stored real students if previously saved by teacher
-        const stored = localStorage.getItem('exam_students_list');
+        const stored = localStorage.getItem('exam_students_data');
         if (stored) {
             try {
                 const parsed = JSON.parse(stored);
                 if (Array.isArray(parsed) && parsed.length > 0) {
-                    document.getElementById('students-textarea').value = parsed.join('\n');
+                    const lines = parsed.map(item => typeof item === 'object' ? `${item.name} | ${item.task || ''}` : item);
+                    document.getElementById('students-textarea').value = lines.join('\n');
                 }
             } catch(e) {}
         }
         const params = new URLSearchParams(window.location.search);
-        if (params.get('p')) {
-            pageNum = parseInt(params.get('p')) || 1;
-        }
+        if (params.get('p')) pageNum = parseInt(params.get('p')) || 1;
         if (params.get('host')) {
             document.getElementById('role-menu').classList.add('hidden');
             joinExamSession(params.get('host'));
@@ -905,36 +999,127 @@
             setTimeout(() => document.getElementById('teacher-pwd').classList.remove('input-error'), 1000);
         }
     }
-    // --- REAL STUDENT LIST APPROVAL & BROADCAST ---
+    // --- REAL STUDENT LIST & TASK APPROVAL ---
     function saveAndBroadcastStudents() {
         const raw = document.getElementById('students-textarea').value;
-        const list = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
-        if (list.length === 0) {
+        const lines = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+        if (lines.length === 0) {
             return showNotification("Введіть реальний список студентів перед затвердженням!", true);
         }
+        const list = [];
+        const tasks = {};
+        const storageData = [];
+        lines.forEach((line, idx) => {
+            let name = line;
+            let task = `Варіант №${idx + 1}`;
+            if (line.includes('|')) {
+                const parts = line.split('|');
+                name = parts[0].trim();
+                task = parts.slice(1).join('|').trim() || task;
+            }
+            if (name.length > 0) {
+                list.push(name);
+                tasks[name] = task;
+                storageData.push({ name, task });
+                if (activeStudentTasks[name] === undefined) {
+                    activeStudentTasks[name] = false;
+                }
+            }
+        });
         registeredStudents = list;
+        studentTasks = tasks;
         studentsApproved = true;
-        localStorage.setItem('exam_students_list', JSON.stringify(registeredStudents));
+        localStorage.setItem('exam_students_data', JSON.stringify(storageData));
         const badge = document.getElementById('teacher-roster-status');
         if (badge) {
             badge.className = "badge badge-ok";
             badge.innerText = `Затверджено (${list.length})`;
         }
-        // Broadcast new approved student list to all connected students
         broadcast({
             type: 'STUDENT_LIST_SYNC',
             approved: true,
             students: registeredStudents,
             claims: studentClaims
         });
-        updateTeacherRosterUI();
-        showNotification("Список затверджено та синхронізовано зі студентами (" + list.length + " осіб).", false);
+        renderTeacherMatrix();
+        showNotification("Список та індивідуальні завдання затверджено (" + list.length + " осіб).", false);
+    }
+    // --- TEACHER MATRIX VIEW (INDIVIDUAL ACTIVATION) ---
+    function renderTeacherMatrix() {
+        const grid = document.getElementById('teacher-matrix-grid');
+        if (!grid) return;
+        if (!studentsApproved || registeredStudents.length === 0) {
+            grid.innerHTML = '<div style="grid-column: 1/-1; color: #888; text-align: center; padding: 25px; font-size: 0.85rem;">Список студентів ще не затверджено.</div>';
+            return;
+        }
+        let activeCount = 0;
+        let html = '';
+        registeredStudents.forEach(stName => {
+            const peerId = Object.keys(studentClaims).find(k => studentClaims[k] === stName);
+            const isOnline = peerId && connections.some(c => c.id === peerId);
+            const clientConn = isOnline ? connections.find(c => c.id === peerId) : null;
+            const handRaised = clientConn ? clientConn.handRaised : false;
+            const violations = peerId ? (studentViolations[peerId] || 0) : 0;
+            const isActive = !!activeStudentTasks[stName];
+            if (isActive) activeCount++;
+            const taskText = studentTasks[stName] || 'Завдання не вказано';
+            const escapedName = escapeHtml(stName);
+            html += `
+            <div class="student-card ${isActive ? 'active-task' : ''} ${isOnline ? 'online' : ''}">
+                <div class="student-card-header">
+                    <span class="student-name" title="${escapedName}">${escapedName}</span>
+                    <span class="badge ${isOnline ? 'badge-ok' : 'badge-wait'}">${isOnline ? 'Онлайн' : 'Очікує'}</span>
+                </div>
+                <textarea class="student-card-task" onchange="updateSingleStudentTask('${escapeJs(stName)}', this.value)" placeholder="Введіть персональне завдання...">${escapeHtml(taskText)}</textarea>
+                <div class="student-card-footer">
+                    <div style="display:flex; gap: 4px; align-items:center;">
+                        ${violations > 0 ? `<span class="badge badge-warn" title="Підозр: ${violations}">⚠️ ${violations}</span>` : ''}
+                        ${handRaised ? `<span style="color:#f59e0b; font-size: 0.8rem;" title="Піднято руку">✋</span>` : ''}
+                    </div>
+                    <button class="btn-matrix-toggle ${isActive ? 'btn-matrix-deactivate' : 'btn-matrix-activate'}" onclick="toggleStudentTaskActivation('${escapeJs(stName)}')">
+                        ${isActive ? '<i data-lucide="square" style="width:12px;height:12px;"></i> Зупинити' : '<i data-lucide="play" style="width:12px;height:12px;"></i> Активувати'}
+                    </button>
+                </div>
+            </div>`;
+        });
+        grid.innerHTML = html;
+        document.getElementById('matrix-active-count').innerText = `${activeCount} активно`;
+        lucide.createIcons();
+    }
+    function updateSingleStudentTask(stName, newText) {
+        studentTasks[stName] = newText.trim();
+        if (activeStudentTasks[stName]) {
+            sendTaskToStudent(stName);
+        }
+    }
+    function toggleStudentTaskActivation(stName) {
+        activeStudentTasks[stName] = !activeStudentTasks[stName];
+        sendTaskToStudent(stName);
+        renderTeacherMatrix();
+    }
+    function activateAllTasks(state) {
+        registeredStudents.forEach(stName => {
+            activeStudentTasks[stName] = state;
+            sendTaskToStudent(stName);
+        });
+        renderTeacherMatrix();
+    }
+    function sendTaskToStudent(stName) {
+        const peerId = Object.keys(studentClaims).find(k => studentClaims[k] === stName);
+        if (!peerId) return;
+        const client = connections.find(c => c.id === peerId);
+        if (client && client.conn.open) {
+            client.conn.send({
+                type: 'INDIVIDUAL_TASK',
+                name: stName,
+                task: studentTasks[stName] || '',
+                active: !!activeStudentTasks[stName]
+            });
+        }
     }
     // --- ANTI-CHEAT & ANTI-SCREENSHOT SYSTEM ---
     function initAntiCheatGuards() {
-        // 1. Disable Right Click Context Menu
         document.addEventListener('contextmenu', e => e.preventDefault());
-        // 2. Disable Clipboard Copy / Cut
         document.addEventListener('copy', e => {
             if (!isLeader && examStarted) {
                 e.preventDefault();
@@ -942,7 +1127,6 @@
             }
         });
         document.addEventListener('cut', e => e.preventDefault());
-        // 3. Intercept PrintScreen & Screen Capture Hotkeys
         window.addEventListener('keydown', (e) => {
             if (isLeader || !examStarted) return;
             if (e.key === 'F12' || 
@@ -953,7 +1137,7 @@
                 e.key === 'PrintScreen') {
                 e.preventDefault();
                 e.stopPropagation();
-                triggerAntiCheatShield("Спроба знімка екрана або гарячих клавіш заборонена!");
+                triggerAntiCheatShield("Спроба знімка екрана або комбінацій клавіш заборонена!");
                 reportViolation("Клавіша: " + e.key);
                 return false;
             }
@@ -966,10 +1150,9 @@
                 try { navigator.clipboard.writeText('Захист екзамену!'); } catch(err){}
             }
         });
-        // 4. Blur / Tab Switch Detection
         window.addEventListener('blur', () => {
             if (!isLeader && examStarted) {
-                triggerAntiCheatShield("Втрата фокусу вікна (можливе перемикання чи скріншот)!");
+                triggerAntiCheatShield("Втрата фокусу вікна (можливе перемикання)!");
                 reportViolation("Втрата фокусу вікна");
             }
         });
@@ -996,38 +1179,27 @@
             time: new Date().toLocaleTimeString()
         });
     }
-    // Dynamic Anti-Cheat Watermark
-    function startDynamicWatermark() {
-        if (watermarkInterval) clearInterval(watermarkInterval);
-        const applyWatermark = () => {
-            const wm = document.getElementById('watermark-layer');
-            if (!wm) return;
-            const timeStr = new Date().toLocaleTimeString();
-            const text = `${myStudentName || 'СТУДЕНТ'} • ID:${currentHostId || 'EXAM'} • ${timeStr} • НЕ ДЛЯ РОЗПОВСЮДЖЕННЯ`;
-            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="340" height="200">
-                <text x="50%" y="50%" fill="rgba(184, 0, 0, 0.16)" font-size="12" font-family="Montserrat" font-weight="700" text-anchor="middle" transform="rotate(-25 170 100)">${escapeHtml(text)}</text>
-            </svg>`;
-            wm.style.backgroundImage = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
-        };
-        applyWatermark();
-        watermarkInterval = setInterval(applyWatermark, 1000);
-    }
     function escapeHtml(str) {
-        return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+        return (str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
     }
-    // --- STUDENT DROPDOWN IDENTITY CLAIM ---
+    function escapeJs(str) {
+        return (str || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+    // --- STUDENT DROPDOWN & IDENTITY CLAIM ---
     function showWaitingForTeacherApproval() {
         document.getElementById('student-identity-menu').classList.add('hidden');
         document.getElementById('listener-menu').classList.add('hidden');
+        document.getElementById('student-task-card').classList.add('hidden');
         document.getElementById('loading-menu').classList.remove('hidden');
         document.getElementById('loading-msg').innerHTML = 
-            'Очікування затвердження списку студентів викладачем...<br>' +
+            'Очікування формування та затвердження завдань викладачем...<br>' +
             '<span style="font-size:0.8rem; font-weight:500; color:#666; margin-top:8px; display:block;">' +
-            'Викладач формує список групи. Щойно його буде затверджено, тут з\'явиться вибір вашого прізвища.' +
+            'Викладач готує матрицю групи. Вибір вашого прізвища з\'явиться автоматично.' +
             '</span>';
     }
     function showStudentClaimMenu(students, claims) {
         document.getElementById('loading-menu').classList.add('hidden');
+        document.getElementById('student-task-card').classList.add('hidden');
         const menu = document.getElementById('student-identity-menu');
         menu.classList.remove('hidden');
         const select = document.getElementById('student-select');
@@ -1052,9 +1224,8 @@
             return showNotification("Будь ласка, оберіть своє прізвище зі списку!", true);
         }
         if (!hostConnection || !hostConnection.open) {
-            return showNotification("З'єднання з сервером втрачено. Оновіть сторінку.", true);
+            return showNotification("З'єднання з викладачем втрачено. Оновіть сторінку.", true);
         }
-        // Send identity claim request to teacher
         hostConnection.send({
             type: 'CLAIM_IDENTITY',
             name: chosen
@@ -1063,11 +1234,16 @@
         document.getElementById('student-identity-menu').classList.add('hidden');
         document.getElementById('loading-menu').classList.remove('hidden');
     }
+    function openStudentExamWorkspace() {
+        document.getElementById('ui-layer').classList.add('hidden');
+    }
+    function toggleTaskModal() {
+        const modal = document.getElementById('task-modal');
+        modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+    }
     // --- LOCK ROTARY INTERFACE ---
     function initLockInterface() {
-        for (let i = 0; i < 9; i++) {
-            setupRotaryLock(i);
-        }
+        for (let i = 0; i < 9; i++) setupRotaryLock(i);
         updateManualInput();
         lucide.createIcons();
     }
@@ -1149,7 +1325,7 @@
     function getLockCode() {
         return lockDigits.join('');
     }
-    // --- PASTE / COPY LOGIC ---
+    // --- CLIPBOARD & LINKS ---
     document.addEventListener('paste', (e) => {
         if(document.getElementById('listener-menu').classList.contains('hidden')) return;
         e.preventDefault();
@@ -1572,7 +1748,7 @@
         const fmtId = formatId(myIdRaw);
         document.getElementById('meeting-id-display').innerText = fmtId;
         document.getElementById('qr-modal-id').innerText = fmtId;
-        new QRCode(document.getElementById("qr-container"), { text: fullUrl, width: 220, height: 220, colorDark: "#000000" });
+        new QRCode(document.getElementById("qr-container"), { text: fullUrl, width: 140, height: 140, colorDark: "#000000" });
         new QRCode(document.getElementById("qrcode-modal-tgt"), { text: fullUrl, width: 220, height: 220, colorDark: "#000000" });
     }
     function generateShortId() {
@@ -1613,7 +1789,7 @@
             connections = connections.filter(c => (now - c.lastPong) < 10000);
             if(connections.length !== beforeCount) {
                 updateClientList();
-                updateTeacherRosterUI();
+                renderTeacherMatrix();
                 updateHandOverlay();
             }
         }, 2000);
@@ -1629,7 +1805,6 @@
             connections.push(client);
             updateClientList();
             conn.on('open', () => {
-                // Send student list ONLY if approved by teacher
                 conn.send({
                     type: 'INIT_EXAM_INFO',
                     approved: studentsApproved,
@@ -1642,7 +1817,6 @@
             conn.on('data', data => {
                 client.lastPong = Date.now();
                 if (data.type === 'PONG') return; 
-                // Student attempts to pick their name
                 if (data.type === 'CLAIM_IDENTITY') {
                     if (!studentsApproved || !registeredStudents.includes(data.name)) {
                         conn.send({ type: 'CLAIM_RESULT', success: false, msg: 'Список студентів ще не затверджено або прізвище відсутнє!' });
@@ -1655,21 +1829,22 @@
                         studentClaims[conn.peer] = data.name;
                         if (!studentViolations[conn.peer]) studentViolations[conn.peer] = 0;
                         conn.send({ type: 'CLAIM_RESULT', success: true, name: data.name });
-                        // Broadcast updated claims to all students
-                        broadcast({
-                            type: 'CLAIMS_UPDATE',
-                            claims: studentClaims
-                        });
-                        updateTeacherRosterUI();
-                        // If exam is already active, push tasks to them immediately
-                        if (examStarted) {
-                            syncSingleClient(client);
+                        if (activeStudentTasks[data.name]) {
+                            conn.send({
+                                type: 'INDIVIDUAL_TASK',
+                                name: data.name,
+                                task: studentTasks[data.name] || '',
+                                active: true
+                            });
                         }
+                        broadcast({ type: 'CLAIMS_UPDATE', claims: studentClaims });
+                        renderTeacherMatrix();
+                        if (examStarted) syncSingleClient(client);
                     }
                 }
                 if (data.type === 'VIOLATION') {
                     studentViolations[conn.peer] = (studentViolations[conn.peer] || 0) + 1;
-                    updateTeacherRosterUI();
+                    renderTeacherMatrix();
                     showNotification(`⚠️ УВАГА: Студент ${data.student || 'Невідомий'} зафіксований на порушенні (${data.reason})!`, true);
                 }
                 if (data.type === 'ACK_READY') {
@@ -1685,7 +1860,7 @@
                 if (data.type === 'HAND') {
                     client.handRaised = data.value;
                     updateHandOverlay();
-                    updateTeacherRosterUI();
+                    renderTeacherMatrix();
                 }
                 if (data.type === 'RESYNC_REQ') {
                     conn.send({ type: 'PAGE', value: pageNum });
@@ -1697,7 +1872,7 @@
             conn.on('close', () => {
                 connections = connections.filter(c => c.conn !== conn);
                 updateClientList();
-                updateTeacherRosterUI();
+                renderTeacherMatrix();
                 updateHandOverlay();
             });
         });
@@ -1708,14 +1883,13 @@
         document.getElementById('speaker-user-count').innerText = count + " онлайн";
     }
     function updateTeacherRosterUI() {
-        const container = document.getElementById('students-roster-list');
         const modalContainer = document.getElementById('modal-roster-list');
+        if (!modalContainer) return;
         let html = '';
         if (!studentsApproved || registeredStudents.length === 0) {
-            html = '<div style="color: #888; text-align: center; padding: 12px; font-size: 0.8rem;">Список студентів ще не затверджено.<br>Введіть прізвища та натисніть «Затвердити та надіслати список».</div>';
+            html = '<div style="color: #888; text-align: center; padding: 12px; font-size: 0.8rem;">Список ще не затверджено.</div>';
         } else {
             registeredStudents.forEach(stName => {
-                // Find connection by claim
                 const peerId = Object.keys(studentClaims).find(k => studentClaims[k] === stName);
                 const isOnline = peerId && connections.some(c => c.id === peerId);
                 const clientConn = isOnline ? connections.find(c => c.id === peerId) : null;
@@ -1724,21 +1898,17 @@
                 let badge = '<span class="badge badge-wait">Очікує</span>';
                 if (isOnline) {
                     badge = violations > 0 
-                        ? `<span class="badge badge-warn">⚠️ ${violations} підозр</span>` 
+                        ? `<span class="badge badge-warn">⚠️ ${violations}</span>` 
                         : `<span class="badge badge-ok">В мережі</span>`;
                 }
                 html += `
                 <div class="roster-row">
-                    <div>
-                        <b>${escapeHtml(stName)}</b>
-                        ${handRaised ? '<span style="color:#f59e0b; margin-left:4px;">✋ Рука</span>' : ''}
-                    </div>
+                    <div><b>${escapeHtml(stName)}</b> ${handRaised ? '✋' : ''}</div>
                     <div>${badge}</div>
                 </div>`;
             });
         }
-        if (container) container.innerHTML = html;
-        if (modalContainer) modalContainer.innerHTML = html;
+        modalContainer.innerHTML = html;
     }
     async function startDistribution() {
         resetInputColor();
@@ -1754,7 +1924,6 @@
             examStarted = true;
             document.getElementById('ui-layer').classList.add('hidden');
             if(html5QrcodeScanner) try { html5QrcodeScanner.clear(); } catch(e){}
-            // Push exam start to all ready clients
             connections.forEach(c => syncSingleClient(c));
         } else {
             inputField.classList.add('input-error');
@@ -1811,7 +1980,6 @@
                     }
                     return;
                 }
-                // Real students list synchronization & approval handling
                 if (data.type === 'INIT_EXAM_INFO' || data.type === 'STUDENT_LIST_SYNC') {
                     studentsApproved = !!data.approved;
                     if (data.students) registeredStudents = data.students;
@@ -1826,19 +1994,16 @@
                         }
                     }
                 }
-                // Live updates to claimed students
                 if (data.type === 'CLAIMS_UPDATE') {
                     studentClaims = data.claims || {};
                     if (!myStudentName && studentsApproved && registeredStudents.length > 0) {
                         showStudentClaimMenu(registeredStudents, studentClaims);
                     }
                 }
-                // Response to claiming identity
                 if (data.type === 'CLAIM_RESULT') {
                     if (data.success) {
                         myStudentName = data.name;
-                        startDynamicWatermark();
-                        document.getElementById('loading-msg').innerText = "Очікування старту екзамену викладачем...";
+                        document.getElementById('loading-msg').innerText = "Ідентифіковано! Очікуйте активації вашого завдання викладачем...";
                     } else {
                         showNotification(data.msg || "Помилка вибору імені", true);
                         if (studentsApproved && registeredStudents.length > 0) {
@@ -1848,7 +2013,32 @@
                         }
                     }
                 }
-                // Exam tasks pushed
+                // INDIVIDUAL TASK ACTIVATION
+                if (data.type === 'INDIVIDUAL_TASK') {
+                    myIndividualTask = data.task || '';
+                    isMyTaskActive = !!data.active;
+                    document.getElementById('st-task-text').innerText = myIndividualTask;
+                    document.getElementById('modal-task-text').innerText = myIndividualTask;
+                    document.getElementById('st-badge-name').innerText = myStudentName;
+                    if (isMyTaskActive) {
+                        if (document.getElementById('ui-layer').classList.contains('hidden')) {
+                            // User is already on slides, show modal or enable button
+                            showNotification("Викладач щойно активував ваше персональне завдання! Відкрийте кнопку «Завдання».", false);
+                        } else {
+                            // User is waiting in UI layer, show full card
+                            document.getElementById('loading-menu').classList.add('hidden');
+                            document.getElementById('student-identity-menu').classList.add('hidden');
+                            document.getElementById('student-task-card').classList.remove('hidden');
+                        }
+                    } else {
+                        showNotification("Ваше завдання призупинено викладачем.", true);
+                        if (!document.getElementById('student-task-card').classList.contains('hidden')) {
+                            document.getElementById('student-task-card').classList.add('hidden');
+                            document.getElementById('loading-menu').classList.remove('hidden');
+                            document.getElementById('loading-msg').innerText = "Очікування активації завдання викладачем...";
+                        }
+                    }
+                }
                 if (data.type === 'START_EXAM') {
                     document.getElementById('loading-msg').innerText = "Завантаження завдань екзамену...";
                     const ok = await renderPdf(data.url);
@@ -1856,7 +2046,6 @@
                         conn.send({ type: 'ACK_READY' });
                         examStarted = true;
                         document.getElementById('ui-layer').classList.add('hidden');
-                        // Set up QR for fast sharing / verifying
                         const currentUrl = window.location.href.split('?')[0] + '?host=' + currentHostId;
                         document.getElementById('qr-modal-id').innerText = formatId(currentHostId);
                         document.getElementById("qrcode-modal-tgt").innerHTML = "";
