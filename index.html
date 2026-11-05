@@ -32,8 +32,13 @@
         box-sizing: border-box; 
         touch-action: manipulation; 
         -webkit-tap-highlight-color: transparent;
-        user-select: none;
-        -webkit-user-select: none;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -webkit-touch-callout: none !important;
+    }
+    input, textarea {
+        user-select: text !important;
+        -webkit-user-select: text !important;
     }
     @media print {
         html, body { display: none !important; visibility: hidden !important; }
@@ -49,6 +54,24 @@
         overflow: hidden; 
         display: flex; flex-direction: column; 
     }
+    /* --- FORENSIC WATERMARK & DRM OVERLAYS --- */
+    #forensic-watermark {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        pointer-events: none !important;
+        z-index: 180;
+        display: none;
+    }
+    #drm-curtain {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: #000000 !important;
+        color: #ffffff;
+        z-index: 999999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        text-align: center; padding: 25px;
+    }
+    #drm-curtain i { width: 80px; height: 80px; margin-bottom: 20px; color: var(--color-attention-high); }
+    #drm-curtain h2 { font-size: 1.6rem; margin: 0 0 10px 0; color: #ff4d4d; letter-spacing: 1px; font-weight: 800; }
+    #drm-curtain p { max-width: 480px; font-size: 0.95rem; color: #d1d5db; margin: 0 0 25px 0; line-height: 1.5; }
     /* --- UI OVERLAYS --- */
     #ui-layer {
         position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -379,44 +402,22 @@
         opacity: 0.5;
         filter: grayscale(1);
     }
-    /* --- TOGGLE SWITCH FOR MULTI-ACTIVE MODE --- */
-    .switch {
-        position: relative;
-        display: inline-block;
-        width: 36px;
-        height: 20px;
-        flex-shrink: 0;
+    /* Anti-OCR Protected Canvas Containers */
+    .task-canvas-wrapper {
+        width: 100%;
+        background: #ffffff;
+        border: 2px solid #cbd5e1;
+        border-radius: 10px;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
     }
-    .switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-color: #cbd5e1;
-        transition: .25s ease;
-        border-radius: 20px;
-    }
-    .slider:before {
-        position: absolute;
-        content: "";
-        height: 14px;
-        width: 14px;
-        left: 3px;
-        bottom: 3px;
-        background-color: white;
-        transition: .25s ease;
-        border-radius: 50%;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.25);
-    }
-    input:checked + .slider {
-        background-color: var(--color-attention-med);
-    }
-    input:checked + .slider:before {
-        transform: translateX(16px);
+    .task-canvas-wrapper canvas {
+        display: block;
+        width: 100%;
+        pointer-events: none;
     }
     /* --- DESKTOP ADAPTATION (WIDESCREEN NO VERTICAL SCROLL ON LEFT) --- */
     @media (min-width: 900px) {
@@ -452,9 +453,9 @@
         .speaker-left-col {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
             height: 100%;
-            overflow: hidden; /* No scrollbar on the left column */
+            overflow: hidden; 
             padding-right: 2px;
         }
         .speaker-right-col {
@@ -572,16 +573,6 @@
         position: absolute; top: 0; left: 0; width: 100%; height: 100%;
         touch-action: none; cursor: crosshair; pointer-events: none; 
     }
-    /* --- ANTI-CHEAT SCREEN GUARD --- */
-    #screen-guard {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.98); z-index: 9999;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        color: #ff3333; text-align: center; padding: 20px;
-    }
-    #screen-guard i { width: 72px; height: 72px; margin-bottom: 15px; color: #ff3333; }
-    #screen-guard h2 { font-size: 1.5rem; margin: 0 0 10px 0; color: #ffffff; }
-    #screen-guard p { max-width: 450px; font-size: 0.95rem; color: #ffcccc; margin: 0 0 20px 0; }
     /* HAND & OFFLINE OVERLAYS */
     #hand-overlay {
         position: absolute; top: 10px; left: 10px;
@@ -705,11 +696,16 @@
 </style>
 </head>
 <body>
-<div id="screen-guard" class="hidden">
+<!-- DRM FORENSIC WATERMARK CANVAS -->
+<canvas id="forensic-watermark"></canvas>
+<!-- DRM BLACKOUT CURTAIN -->
+<div id="drm-curtain" class="hidden">
     <i data-lucide="shield-alert"></i>
-    <h2>УВАГА: ЗАХИСТ ВІД СПИСУВАННЯ</h2>
-    <p id="screen-guard-msg">Спроба створення знімка екрана або перемикання вікна зафіксована! Дані передано викладачу.</p>
-    <button class="btn-primary" style="max-width: 260px;" onclick="dismissGuard()">ПОВЕРНУТИСЬ ДО ТЕСТУ</button>
+    <h2>DRM ЗАХИСТ ВМІСТУ АКТИВОВАНО</h2>
+    <p id="drm-curtain-msg">Екран затемнено через спробу створення скріншота, запису екрана або перемикання вікна. Порушення зафіксовано в системі викладача.</p>
+    <button class="btn-primary" style="max-width: 280px;" onclick="dismissDrmCurtain()">
+        ПОВЕРНУТИСЯ ДО ТЕСТУ
+    </button>
 </div>
 <div id="ui-layer">
     <div id="role-menu">
@@ -815,7 +811,7 @@
             </select>
         </div>
         <div style="font-size: 0.75rem; color: #666; background: #fff8e1; border: 1px solid #ffe082; padding: 8px; border-radius: 8px; line-height: 1.3;">
-            ⚠️ <b>Увага:</b> Екран захищено від скріншотів, копіювання та перемикання вікон.
+            🔒 <b>DRM-захист:</b> Екран захищено від скріншотів, запису, копіювання тексту та сторонніх розширень. Будь-яка спроба фіксується.
         </div>
         <div class="action-bar" style="margin-top: 10px;">
             <button class="btn-secondary" onclick="location.reload()">
@@ -832,11 +828,12 @@
             <span id="st-badge-name" style="font-weight: 700; font-size: 0.85rem; color: var(--color-attention-med);"></span>
         </div>
         <h3 style="margin-top: 6px;">Ваше персональне завдання</h3>
-        <div id="st-task-text" style="width: 100%; min-height: 120px; background: #fdfdfd; border: 2px solid #ddd; border-radius: 10px; padding: 12px; text-align: left; font-size: 0.95rem; font-weight: 600; line-height: 1.4; color: #111;">
-            Очікування завдання...
+        <!-- Anti-OCR Secure Canvas Display (No DOM text for scrapers / AI extensions) -->
+        <div class="task-canvas-wrapper" style="min-height: 120px;">
+            <canvas id="st-task-canvas" width="400" height="130"></canvas>
         </div>
         <div style="font-size: 0.75rem; color: #666; text-align: left; width: 100%;">
-            Виконуйте на чистовику. Не перемикайте вкладку.
+            Виконуйте на чистовику. Запис екрана та копіювання заблоковано апаратним DRM.
         </div>
         <div class="action-bar" style="margin-top: 8px;">
             <button class="btn-primary" onclick="openStudentExamWorkspace()">
@@ -864,27 +861,11 @@
                         <button class="icon-btn" onclick="shareId()"><i data-lucide="share-2"></i> Надіслати</button>
                     </div>
                 </div>
-                <div style="width: 100%; margin-top: 4px;">
-                    <label style="font-size: 0.75rem; font-weight: 700; color: #444; display: block; margin-bottom: 3px;">Загальні матеріали (PDF / Презентація):</label>
+                <div style="width: 100%; margin-top: 6px;">
+                    <label style="font-size: 0.75rem; font-weight: 700; color: #444; display: block; margin-bottom: 4px;">Загальні матеріали (PDF / Презентація):</label>
                     <input type="text" id="gdrive-input" oninput="resetInputColor()" placeholder="URL завдань (PDF / Google Docs / Slides)">
                     <div id="sync-status" style="display:none; color: var(--color-attention-high); font-weight:700; font-size: 0.8rem; margin-top: 4px;">
                         <i data-lucide="loader-2" class="spin"></i> Завантаження...
-                    </div>
-                </div>
-                <!-- MULTI-ACTIVATION SECURITY TOGGLE -->
-                <div style="width: 100%; margin-top: 4px; padding: 7px 10px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between;">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <i data-lucide="shield" style="width: 15px; height: 15px; color: var(--color-attention-med);"></i>
-                            <span style="font-size: 0.75rem; font-weight: 700; color: #1e293b;">Мульти-активація:</span>
-                        </div>
-                        <label class="switch" title="Дозволити одночасну активацію завдань кільком студентам">
-                            <input type="checkbox" id="toggle-multi-active" onchange="toggleMultiActiveMode(this.checked)">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div id="mode-desc-text" style="font-size: 0.68rem; color: #64748b; margin-top: 3px; line-height: 1.25;">
-                        Режим: <b style="color:var(--color-attention-med);">1 студент</b> (захист від помилок)
                     </div>
                 </div>
                 <div class="action-bar" style="margin-top: auto;">
@@ -911,12 +892,7 @@
                             <button class="icon-btn" onclick="openImportModal()" title="Швидка вставка списку">
                                 <i data-lucide="file-text"></i> Імпорт
                             </button>
-                            <button class="icon-btn" onclick="shuffleTasks()" title="Випадково перемішати завдання між студентами">
-                                <i data-lucide="shuffle"></i> Перемішати
-                            </button>
-                            <button class="icon-btn" id="btn-activate-all" onclick="activateAllTasks(true)" title="Доступно лише в груповому режимі" style="opacity: 0.5;">
-                                <i data-lucide="play"></i> Всім
-                            </button>
+                            <button class="icon-btn" onclick="activateAllTasks(true)"><i data-lucide="play"></i> Всім</button>
                             <button class="icon-btn" onclick="activateAllTasks(false)"><i data-lucide="square"></i> Зупинити всі</button>
                         </div>
                     </div>
@@ -969,8 +945,8 @@
             <h3 style="color: var(--color-attention-med);">Моє завдання</h3>
             <span class="badge badge-ok">Активовано</span>
         </div>
-        <div id="modal-task-text" style="width: 100%; min-height: 100px; max-height: 250px; overflow-y: auto; background: #fdfdfd; border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-weight: 600; font-size: 0.95rem; line-height: 1.4;">
-            Немає активного завдання
+        <div class="task-canvas-wrapper" style="min-height: 120px; max-height: 250px; overflow-y: auto;">
+            <canvas id="modal-task-canvas" width="400" height="140"></canvas>
         </div>
         <button class="btn-secondary" style="margin-top:15px; width: 100%;" onclick="toggleTaskModal()">ЗАКРИТИ</button>
     </div>
@@ -1092,7 +1068,7 @@
     let isDrawing = false;
     let lastX = 0, lastY = 0;
     let pageMarks = {};
-    // WYSIWYG Student Cards State & Security Policy
+    // WYSIWYG Student Cards State
     let studentCards = []; // Array of { id, name, task, active }
     let registeredStudents = [];
     let studentTasks = {}; // name -> task string
@@ -1103,14 +1079,13 @@
     let myStudentName = "";
     let myIndividualTask = "";
     let isMyTaskActive = false;
-    let allowMultipleActive = false; // Default: Single student active at a time to prevent accidental teaching
     const lockDigits = [0,0,0,0,0,0,0,0,0];
     let html5QrcodeScanner = null;
+    let watermarkInterval = null;
     lucide.createIcons();
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     window.onload = () => {
         document.documentElement.style.setProperty('--landscape-rotation', LANDSCAPE_ROTATION_DEG + 'deg');
-        // Load stored real students if previously saved by teacher
         const stored = localStorage.getItem('exam_students_data');
         if (stored) {
             try {
@@ -1135,8 +1110,234 @@
         initDrawingListeners();
         initLockInterface();
         initManualInputListener();
-        initAntiCheatGuards();
+        initDrmGuards();
+        blockScreenRecordingAPIs();
     };
+    // --- DRM & ANTI-CHEAT HARDENING (NETFLIX-STYLE BLACKOUT & FORENSICS) ---
+    function blockScreenRecordingAPIs() {
+        if (navigator.mediaDevices) {
+            navigator.mediaDevices.getDisplayMedia = function() {
+                reportViolation("Спроба захоплення/запису екрана (getDisplayMedia)");
+                triggerDrmCurtain("Запис екрана суворо заборонено апаратним захистом DRM!");
+                return Promise.reject(new DOMException("Screen capture is prohibited by DRM policy", "NotAllowedError"));
+            };
+        }
+    }
+    function initDrmGuards() {
+        document.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            return false;
+        });
+        document.addEventListener('copy', e => {
+            if (!isLeader) {
+                e.preventDefault();
+                scrubClipboard();
+                reportViolation("Спроба копіювання тексту");
+                triggerDrmCurtain("Копіювання матеріалів заборонено правилами іспиту!");
+            }
+        });
+        document.addEventListener('cut', e => {
+            if (!isLeader) {
+                e.preventDefault();
+                scrubClipboard();
+            }
+        });
+        document.addEventListener('paste', e => {
+            if (!isLeader && examStarted) e.preventDefault();
+        });
+        document.addEventListener('dragstart', e => e.preventDefault());
+        document.addEventListener('drop', e => e.preventDefault());
+        document.addEventListener('selectstart', e => {
+            if (!isLeader && examStarted) e.preventDefault();
+        });
+        document.addEventListener('selectionchange', () => {
+            if (!isLeader && examStarted) {
+                const sel = window.getSelection();
+                if (sel && sel.removeAllRanges) sel.removeAllRanges();
+            }
+        });
+        // Detect Shortcut and Snipping Keys
+        window.addEventListener('keydown', (e) => {
+            if (isLeader) return;
+            const key = (e.key || '').toLowerCase();
+            const isCtrlOrMeta = e.ctrlKey || e.metaKey;
+            // PrintScreen, Snip tool, F12, Devtools, Print, Save, Inspect
+            if (e.key === 'PrintScreen' || e.keyCode === 44 ||
+                (isCtrlOrMeta && ['p','s','u','c','x','a'].includes(key)) ||
+                (isCtrlOrMeta && e.shiftKey && ['i','j','c','s','3','4','5'].includes(key)) ||
+                (e.metaKey && e.shiftKey) || 
+                e.key === 'F12') {
+                e.preventDefault();
+                e.stopPropagation();
+                scrubClipboard();
+                triggerDrmCurtain("Спроба знімка екрана або забороненої комбінації клавіш блокована!");
+                reportViolation("Заборонена клавіша / скріншот: " + (e.key || e.keyCode));
+                return false;
+            }
+        }, true);
+        window.addEventListener('keyup', (e) => {
+            if (isLeader) return;
+            if (e.key === 'PrintScreen' || e.keyCode === 44) {
+                scrubClipboard();
+                triggerDrmCurtain("PrintScreen заблоковано апаратним DRM!");
+                reportViolation("PrintScreen (KeyUp)");
+            }
+        });
+        // Instant Blackout on Blur / Loss of Window Focus (Blocks Windows Snipping Tool & Mac screenshot)
+        window.addEventListener('blur', () => {
+            if (!isLeader && examStarted) {
+                scrubClipboard();
+                triggerDrmCurtain("Втрата фокусу екрана (можлива спроба скріншота або перемикання вікна)!");
+                reportViolation("Втрата фокусу вікна (Blur)");
+            }
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && !isLeader && examStarted) {
+                scrubClipboard();
+                triggerDrmCurtain("Згортання або перемикання вкладки під час іспиту!");
+                reportViolation("Вкладку приховано (VisibilityChange)");
+            }
+        });
+        window.addEventListener('pagehide', () => {
+            if (!isLeader && examStarted) scrubClipboard();
+        });
+        window.addEventListener('beforeprint', (e) => {
+            e.preventDefault();
+            triggerDrmCurtain("Друк матеріалів іспиту суворо заборонено!");
+            reportViolation("Спроба друку");
+        });
+    }
+    function scrubClipboard() {
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText('⚠️ [ExamSync DRM: Матеріали іспиту захищено від копіювання]');
+            }
+        } catch(e){}
+    }
+    function triggerDrmCurtain(msg) {
+        const curtain = document.getElementById('drm-curtain');
+        document.getElementById('drm-curtain-msg').innerText = msg;
+        curtain.classList.remove('hidden');
+    }
+    function dismissDrmCurtain() {
+        document.getElementById('drm-curtain').classList.add('hidden');
+    }
+    function reportViolation(reason) {
+        if (!hostConnection || !hostConnection.open) return;
+        hostConnection.send({
+            type: 'VIOLATION',
+            student: myStudentName || "Невідомий студент",
+            reason: reason,
+            time: new Date().toLocaleTimeString()
+        });
+    }
+    // --- FORENSIC WATERMARK CANVAS ENGINE (ANTI-SMARTPHONE CAMERA CAPTURE) ---
+    function startForensicWatermarking() {
+        const wmCanvas = document.getElementById('forensic-watermark');
+        wmCanvas.style.display = 'block';
+        if (watermarkInterval) clearInterval(watermarkInterval);
+        function drawWatermark() {
+            if (isLeader || !examStarted) {
+                wmCanvas.style.display = 'none';
+                return;
+            }
+            wmCanvas.style.display = 'block';
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const dpr = window.devicePixelRatio || 1;
+            wmCanvas.width = w * dpr;
+            wmCanvas.height = h * dpr;
+            const ctx = wmCanvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            ctx.clearRect(0, 0, w, h);
+            const timestamp = new Date().toLocaleTimeString();
+            const text = `ExamSync DRM • ${myStudentName || 'СТУДЕНТ'} • ID:${currentHostId || 'SYNC'} • ${timestamp}`;
+            ctx.save();
+            ctx.rotate(-22 * Math.PI / 180);
+            ctx.font = "700 13px 'Montserrat', sans-serif";
+            ctx.fillStyle = "rgba(180, 0, 0, 0.08)";
+            const stepX = 260;
+            const stepY = 80;
+            for (let x = -w; x < w * 2; x += stepX) {
+                for (let y = -h; y < h * 2; y += stepY) {
+                    ctx.fillText(text, x, y);
+                }
+            }
+            ctx.restore();
+        }
+        drawWatermark();
+        watermarkInterval = setInterval(drawWatermark, 1000);
+        window.addEventListener('resize', drawWatermark);
+    }
+    // --- SECURE ANTI-OCR CANVAS TASK RENDERER ---
+    function renderTaskToSecureCanvas(canvasId, text, studentName, isActive) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        const parentWidth = canvas.parentElement ? canvas.parentElement.clientWidth : 380;
+        const displayWidth = Math.max(300, parentWidth);
+        if (!isActive) {
+            canvas.width = displayWidth * dpr;
+            canvas.height = 90 * dpr;
+            canvas.style.width = displayWidth + 'px';
+            canvas.style.height = '90px';
+            ctx.scale(dpr, dpr);
+            ctx.fillStyle = '#fff5f5';
+            ctx.fillRect(0, 0, displayWidth, 90);
+            ctx.fillStyle = '#c62828';
+            ctx.font = "700 13px 'Montserrat', sans-serif";
+            ctx.textAlign = 'center';
+            ctx.fillText("ЗАВДАННЯ ДЕАКТИВОВАНО ВИКЛАДАЧЕМ", displayWidth / 2, 48);
+            return;
+        }
+        const baseFontSize = 14;
+        ctx.font = `600 ${baseFontSize}px 'Montserrat', sans-serif`;
+        const words = (text || "Очікування завдання...").split(/\s+/);
+        const lines = [];
+        let curLine = '';
+        const maxTextWidth = displayWidth - 28;
+        for (let i = 0; i < words.length; i++) {
+            const testLine = curLine ? curLine + ' ' + words[i] : words[i];
+            if (ctx.measureText(testLine).width > maxTextWidth && curLine) {
+                lines.push(curLine);
+                curLine = words[i];
+            } else {
+                curLine = testLine;
+            }
+        }
+        if (curLine) lines.push(curLine);
+        const lineHeight = 22;
+        const totalHeight = Math.max(110, (lines.length * lineHeight) + 36);
+        canvas.width = displayWidth * dpr;
+        canvas.height = totalHeight * dpr;
+        canvas.style.width = displayWidth + 'px';
+        canvas.style.height = totalHeight + 'px';
+        ctx.scale(dpr, dpr);
+        // Security background with micro-noise texture
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, displayWidth, totalHeight);
+        // Micro watermark on canvas
+        ctx.save();
+        ctx.rotate(-12 * Math.PI / 180);
+        ctx.font = "700 11px 'Montserrat', sans-serif";
+        ctx.fillStyle = "rgba(11, 83, 148, 0.05)";
+        for (let x = -50; x < displayWidth + 100; x += 180) {
+            for (let y = -40; y < totalHeight + 100; y += 40) {
+                ctx.fillText(`PROTECTED • ${studentName || ''}`, x, y);
+            }
+        }
+        ctx.restore();
+        // Question Raster Text
+        ctx.fillStyle = '#0f172a';
+        ctx.font = `600 ${baseFontSize}px 'Montserrat', sans-serif`;
+        ctx.textAlign = 'left';
+        let yPos = 28;
+        for (const line of lines) {
+            ctx.fillText(line, 14, yPos);
+            yPos += lineHeight;
+        }
+    }
     // --- TEACHER AUTHENTICATION (BCRYPT) ---
     function promptTeacherAuth() {
         document.getElementById('teacher-pwd').value = "";
@@ -1175,7 +1376,7 @@
             setTimeout(() => document.getElementById('teacher-pwd').classList.remove('input-error'), 1000);
         }
     }
-    // --- WYSIWYG CARD, MULTI-ACTIVATION & MATRIX LOGIC ---
+    // --- WYSIWYG CARD & MATRIX LOGIC ---
     function syncCardStateToGlobals() {
         registeredStudents = studentCards.map(c => c.name.trim()).filter(n => n.length > 0);
         studentTasks = {};
@@ -1189,63 +1390,6 @@
         });
         studentsApproved = registeredStudents.length > 0;
         localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
-    }
-    function toggleMultiActiveMode(enabled) {
-        allowMultipleActive = enabled;
-        const desc = document.getElementById('mode-desc-text');
-        const btnAll = document.getElementById('btn-activate-all');
-        if (allowMultipleActive) {
-            if (desc) desc.innerHTML = 'Режим: <b style="color:var(--color-attention-med);">Груповий</b> (можна кількох)';
-            if (btnAll) {
-                btnAll.style.opacity = '1';
-                btnAll.title = "Активувати всім";
-            }
-        } else {
-            if (desc) desc.innerHTML = 'Режим: <b style="color:var(--color-attention-med);">1 студент</b> (захист від помилок)';
-            if (btnAll) {
-                btnAll.style.opacity = '0.5';
-                btnAll.title = "Доступно лише в груповому режимі";
-            }
-            // If more than 1 student is active, immediately deactivate the surplus
-            const activeOnes = studentCards.filter(c => c.active);
-            if (activeOnes.length > 1) {
-                for (let i = 1; i < activeOnes.length; i++) {
-                    activeOnes[i].active = false;
-                    const stName = activeOnes[i].name.trim();
-                    if (stName) {
-                        activeStudentTasks[stName] = false;
-                        sendTaskToStudent(stName);
-                    }
-                }
-                syncCardStateToGlobals();
-                renderTeacherMatrix();
-                showNotification("Увімкнено одиночний режим. Залишено активним лише 1 студента.", false);
-            }
-        }
-    }
-    function shuffleTasks() {
-        if (studentCards.length < 2) {
-            return showNotification("Для перемішування потрібно створити щонайменше 2 картки!", true);
-        }
-        // Extract tasks and shuffle using Fisher-Yates
-        const tasks = studentCards.map(c => c.task);
-        for (let i = tasks.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [tasks[i], tasks[j]] = [tasks[j], tasks[i]];
-        }
-        studentCards.forEach((c, idx) => {
-            c.task = tasks[idx];
-            const stName = c.name.trim();
-            if (stName) {
-                studentTasks[stName] = c.task;
-                if (c.active) {
-                    sendTaskToStudent(stName);
-                }
-            }
-        });
-        syncCardStateToGlobals();
-        renderTeacherMatrix();
-        showNotification("Завдання успішно випадково перемішано між студентами!", false);
     }
     function addStudentCard(name = "", task = "") {
         const newId = 'st_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
@@ -1312,30 +1456,13 @@
         if (!stName) {
             return showNotification("Введіть ПІБ студента перед активацією!", true);
         }
-        const willBeActive = !card.active;
-        // SINGLE STUDENT RESTRICTION (Default Protection):
-        if (willBeActive && !allowMultipleActive) {
-            studentCards.forEach(c => {
-                if (c.id !== id && c.active) {
-                    c.active = false;
-                    const otherName = c.name.trim();
-                    if (otherName) {
-                        activeStudentTasks[otherName] = false;
-                        sendTaskToStudent(otherName);
-                    }
-                }
-            });
-        }
-        card.active = willBeActive;
+        card.active = !card.active;
         activeStudentTasks[stName] = card.active;
         localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
         sendTaskToStudent(stName);
         renderTeacherMatrix();
     }
     function activateAllTasks(state) {
-        if (state && !allowMultipleActive) {
-            return showNotification("Увімкніть перемикач «Мульти-активація» на лівій панелі для роздачі завдань всім одночасно!", true);
-        }
         studentCards.forEach(c => {
             c.active = state;
             const stName = c.name.trim();
@@ -1472,73 +1599,10 @@
             client.conn.send({
                 type: 'INDIVIDUAL_TASK',
                 name: stName,
-                // If deactivated, NEVER send task string to prevent cheating!
                 task: isActive ? (studentTasks[stName] || '') : '',
                 active: isActive
             });
         }
-    }
-    // --- ANTI-CHEAT & ANTI-SCREENSHOT SYSTEM ---
-    function initAntiCheatGuards() {
-        document.addEventListener('contextmenu', e => e.preventDefault());
-        document.addEventListener('copy', e => {
-            if (!isLeader && examStarted) {
-                e.preventDefault();
-                reportViolation("Спроба копіювання");
-            }
-        });
-        document.addEventListener('cut', e => e.preventDefault());
-        window.addEventListener('keydown', (e) => {
-            if (isLeader || !examStarted) return;
-            if (e.key === 'F12' || 
-                (e.ctrlKey && ['p','s','u','c'].includes(e.key.toLowerCase())) ||
-                (e.metaKey && ['p','s','u','c'].includes(e.key.toLowerCase())) ||
-                (e.ctrlKey && e.shiftKey && ['i','j','c','s'].includes(e.key.toLowerCase())) ||
-                (e.metaKey && e.shiftKey && ['3','4','s'].includes(e.key.toLowerCase())) ||
-                e.key === 'PrintScreen') {
-                e.preventDefault();
-                e.stopPropagation();
-                triggerAntiCheatShield("Спроба знімка екрана або комбінацій клавіш заборонена!");
-                reportViolation("Клавіша: " + e.key);
-                return false;
-            }
-        }, true);
-        window.addEventListener('keyup', (e) => {
-            if (isLeader || !examStarted) return;
-            if (e.key === 'PrintScreen') {
-                triggerAntiCheatShield("PrintScreen заблоковано!");
-                reportViolation("PrintScreen");
-                try { navigator.clipboard.writeText('Захист екзамену!'); } catch(err){}
-            }
-        });
-        window.addEventListener('blur', () => {
-            if (!isLeader && examStarted) {
-                triggerAntiCheatShield("Втрата фокусу вікна (можливе перемикання)!");
-                reportViolation("Втрата фокусу вікна");
-            }
-        });
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden && !isLeader && examStarted) {
-                triggerAntiCheatShield("Перемикання вкладки під час іспиту!");
-                reportViolation("Приховано вкладку");
-            }
-        });
-    }
-    function triggerAntiCheatShield(msg) {
-        document.getElementById('screen-guard-msg').innerText = msg;
-        document.getElementById('screen-guard').classList.remove('hidden');
-    }
-    function dismissGuard() {
-        document.getElementById('screen-guard').classList.add('hidden');
-    }
-    function reportViolation(reason) {
-        if (!hostConnection || !hostConnection.open) return;
-        hostConnection.send({
-            type: 'VIOLATION',
-            student: myStudentName || "Невідомий студент",
-            reason: reason,
-            time: new Date().toLocaleTimeString()
-        });
     }
     function escapeHtml(str) {
         return (str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
@@ -1596,13 +1660,16 @@
         document.getElementById('ui-layer').classList.add('hidden');
     }
     function toggleTaskModal() {
-        // ENFORCE TASK AVAILABILITY: If task is deactivated, strictly forbid viewing!
         if (!isMyTaskActive) {
             showNotification("Ваше завдання наразі деактивовано викладачем! Перегляд заборонено.", true);
             return;
         }
         const modal = document.getElementById('task-modal');
-        modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+        const isOpening = modal.style.display !== 'flex';
+        modal.style.display = isOpening ? 'flex' : 'none';
+        if (isOpening) {
+            renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, true);
+        }
     }
     // --- LOCK ROTARY INTERFACE ---
     function initLockInterface() {
@@ -2209,7 +2276,7 @@
                 if (data.type === 'VIOLATION') {
                     studentViolations[conn.peer] = (studentViolations[conn.peer] || 0) + 1;
                     renderTeacherMatrix();
-                    showNotification(`⚠️ УВАГА: Студент ${data.student || 'Невідомий'} зафіксований на порушенні (${data.reason})!`, true);
+                    showNotification(`⚠️ УВАГА: Студент ${data.student || 'Невідомий'} порушив правила DRM (${data.reason})!`, true);
                 }
                 if (data.type === 'ACK_READY') {
                     client.ready = true;
@@ -2388,9 +2455,9 @@
                     const loadingMenuEl = document.getElementById('loading-menu');
                     const loadingMsgEl = document.getElementById('loading-msg');
                     const taskBtn = document.getElementById('btn-my-task');
+                    renderTaskToSecureCanvas('st-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
+                    renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
                     if (isMyTaskActive) {
-                        document.getElementById('st-task-text').innerText = myIndividualTask;
-                        document.getElementById('modal-task-text').innerText = myIndividualTask;
                         document.getElementById('st-badge-name').innerText = myStudentName;
                         if (taskBtn) {
                             taskBtn.classList.remove('task-inactive');
@@ -2404,9 +2471,6 @@
                             taskCardEl.classList.remove('hidden');
                         }
                     } else {
-                        // DEACTIVATED - WIPE CONTENT IMMEDIATELY TO PREVENT SHARING/CHEATING
-                        document.getElementById('st-task-text').innerText = "Завдання тимчасово деактивовано або призупинено викладачем.";
-                        document.getElementById('modal-task-text').innerText = "Доступ заблоковано. Завдання деактивовано викладачем.";
                         if (taskModalEl) taskModalEl.style.display = 'none';
                         if (taskBtn) {
                             taskBtn.classList.add('task-inactive');
@@ -2435,6 +2499,7 @@
                         document.getElementById('qr-modal-id').innerText = formatId(currentHostId);
                         document.getElementById("qrcode-modal-tgt").innerHTML = "";
                         new QRCode(document.getElementById("qrcode-modal-tgt"), { text: currentUrl, width: 220, height: 220, colorDark: "#000000" });
+                        startForensicWatermarking();
                     }
                 }
                 if (data.type === 'PAGE') {
