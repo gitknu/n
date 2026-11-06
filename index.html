@@ -530,7 +530,7 @@
         border: 2px solid #cbd5e1;
         border-radius: 10px;
         overflow: hidden;
-        display: center;
+        display: flex;
         justify-content: center;
         align-items: center;
         box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
@@ -1228,41 +1228,49 @@
     const LANDSCAPE_ROTATION_DEG = 0; 
     const APP_PREFIX = "exam_sync_";
     const DEFAULT_PDF_URL = 'https://gitknu.github.io/io/1_Tolstanova.pdf';
-    // WebRTC Enterprise-Grade NAT/Firewall Traversal Configuration (STUN & Multi-Port TURN Relay)
+    // --- ENHANCED GLOBAL ICE / STUN / TURN CONFIGURATION FOR INTERNET, 4G/5G, SATELLITE & STRICT FIREWALLS ---
     const PEER_CONFIG = {
         debug: 1,
         config: {
             iceServers: [
+                // High-performance public STUN servers
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
                 { urls: 'stun:stun2.l.google.com:19302' },
                 { urls: 'stun:stun3.l.google.com:19302' },
                 { urls: 'stun:stun4.l.google.com:19302' },
                 { urls: 'stun:stun.cloudflare.com:3478' },
+                { urls: 'stun:stun.services.mozilla.com' },
                 { urls: 'stun:global.stun.twilio.com:3478' },
+                // FreeTURN STUN & TURN Relays (UDP, TCP, TLS)
+                { urls: 'stun:freeturn.net:3478' },
+                {
+                    urls: [
+                        'turn:freeturn.net:3478',
+                        'turn:freeturn.net:3478?transport=tcp',
+                        'turns:freeturn.net:5349',
+                        'turns:freeturn.net:5349?transport=tcp'
+                    ],
+                    username: 'free',
+                    credential: 'free'
+                },
+                // OpenRelay / Metered STUN & TURN Relays (UDP, TCP, Ports 80 & 443)
                 { urls: 'stun:openrelay.metered.ca:80' },
-                { urls: 'stun:openrelay.metered.ca:443' },
+                { urls: 'stun:relay.metered.ca:80' },
                 {
                     urls: [
                         'turn:openrelay.metered.ca:80',
                         'turn:openrelay.metered.ca:443',
                         'turn:openrelay.metered.ca:443?transport=tcp',
-                        'turn:openrelay.metered.ca:80?transport=tcp',
-                        'turns:openrelay.metered.ca:443?transport=tcp',
-                        'turns:openrelay.metered.ca:5349'
+                        'turn:relay.metered.ca:80',
+                        'turn:relay.metered.ca:443',
+                        'turn:relay.metered.ca:443?transport=tcp'
                     ],
                     username: 'openrelayproject',
                     credential: 'openrelayproject'
-                },
-                {
-                    urls: [
-                        'turn:freeturn.net:3478',
-                        'turns:freeturn.net:5349'
-                    ],
-                    username: 'free',
-                    credential: 'free'
                 }
             ],
+            sdpSemantics: 'unified-plan',
             iceCandidatePoolSize: 10
         }
     };
@@ -1479,12 +1487,14 @@
     }
     function reportViolation(reason) {
         if (!hostConnection || !hostConnection.open) return;
-        hostConnection.send({
-            type: 'VIOLATION',
-            student: myStudentName || "Невідомий студент",
-            reason: reason,
-            time: new Date().toLocaleTimeString()
-        });
+        try {
+            hostConnection.send({
+                type: 'VIOLATION',
+                student: myStudentName || "Невідомий студент",
+                reason: reason,
+                time: new Date().toLocaleTimeString()
+            });
+        } catch(e) {}
     }
     // --- FORENSIC WATERMARK CANVAS ENGINE (ANTI-SMARTPHONE CAMERA CAPTURE) ---
     function startForensicWatermarking() {
@@ -1962,13 +1972,15 @@
         const client = connections.find(c => c.id === peerId);
         if (client && client.conn && client.conn.open) {
             const isActive = !!activeStudentTasks[stName];
-            client.conn.send({
-                type: 'INDIVIDUAL_TASK',
-                name: stName,
-                task: isActive ? (studentTasks[stName] || '') : '',
-                active: isActive,
-                duration: duration || null
-            });
+            try {
+                client.conn.send({
+                    type: 'INDIVIDUAL_TASK',
+                    name: stName,
+                    task: isActive ? (studentTasks[stName] || '') : '',
+                    active: isActive,
+                    duration: duration || null
+                });
+            } catch(e) {}
         }
     }
     function escapeHtml(str) {
@@ -2015,10 +2027,12 @@
         if (!hostConnection || !hostConnection.open) {
             return showNotification("З'єднання з викладачем втрачено. Оновіть сторінку.", true);
         }
-        hostConnection.send({
-            type: 'CLAIM_IDENTITY',
-            name: chosen
-        });
+        try {
+            hostConnection.send({
+                type: 'CLAIM_IDENTITY',
+                name: chosen
+            });
+        } catch(e) {}
         document.getElementById('loading-msg').innerText = "Підтвердження викладачем...";
         document.getElementById('student-identity-menu').classList.add('hidden');
         document.getElementById('loading-menu').classList.remove('hidden');
@@ -2030,10 +2044,12 @@
         const icon = btn ? btn.querySelector('i') : null;
         if (icon) icon.classList.add('spin');
         if (hostConnection && hostConnection.open) {
-            hostConnection.send({
-                type: 'STUDENT_TASK_RESYNC_REQ',
-                name: myStudentName
-            });
+            try {
+                hostConnection.send({
+                    type: 'STUDENT_TASK_RESYNC_REQ',
+                    name: myStudentName
+                });
+            } catch(e) {}
         } else {
             showNotification("З'єднання втрачено. Перезавантажте сторінку.", true);
         }
@@ -2269,7 +2285,7 @@
         if(hostConnection && hostConnection.open) {
             const btnIcon = document.querySelector('.btn-inner i[data-lucide="refresh-cw"]');
             if(btnIcon) btnIcon.classList.add('spin');
-            hostConnection.send({ type: 'RESYNC_REQ' });
+            try { hostConnection.send({ type: 'RESYNC_REQ' }); } catch(e) {}
             setTimeout(() => { if(btnIcon) btnIcon.classList.remove('spin'); }, 1000);
         } else {
              if(confirm("З'єднання втрачено. Перезавантажити?")) window.location.reload();
@@ -2468,20 +2484,22 @@
         const fsBtn = document.getElementById('fs-hand');
         if (myHandRaised) fsBtn.classList.add('fs-btn-active');
         else fsBtn.classList.remove('fs-btn-active');
-        hostConnection.send({ type: 'HAND', value: myHandRaised });
+        try { hostConnection.send({ type: 'HAND', value: myHandRaised }); } catch(e) {}
         if (myHandRaised) {
             handTimeout = setTimeout(() => {
                 myHandRaised = false;
                 document.getElementById('btn-hand').classList.remove('hand-active');
                 document.getElementById('fs-hand').classList.remove('fs-btn-active');
-                if (hostConnection) { hostConnection.send({ type: 'HAND', value: false }); }
+                if (hostConnection) { 
+                    try { hostConnection.send({ type: 'HAND', value: false }); } catch(e) {}
+                }
                 handTimeout = null;
             }, 10000);
         }
     }
     function updateHandOverlay() {
         if (!isLeader) return;
-        const count = connections.filter(c => c.handRaised).length;
+        const count = connections.filter(c => c.conn && c.conn.open && c.handRaised).length;
         const overlay = document.getElementById('hand-overlay');
         const counter = document.getElementById('hand-count');
         counter.innerText = count;
@@ -2618,16 +2636,23 @@
         renderTeacherMatrix();
         myIdRaw = generateShortId();
         const peerJsId = APP_PREFIX + myIdRaw;
+        if (peer) {
+            try { peer.destroy(); } catch(e) {}
+            peer = null;
+        }
         peer = new Peer(peerJsId, PEER_CONFIG);
         peer.on('open', () => {
             updateQRCodes();
             document.getElementById('btn-start-sync').disabled = false;
         });
+        peer.on('disconnected', () => {
+            try { peer.reconnect(); } catch(e) {}
+        });
         peer.on('error', (err) => {
             if(err.type === 'unavailable-id') {
                 peer.destroy();
                 setTimeout(initLeader, 200);
-            } else {
+            } else if (err.type !== 'peer-unavailable') {
                 showNotification("Помилка зв'язку: " + err.type, true);
             }
         });
@@ -2635,20 +2660,21 @@
             if(!isLeader) return;
             connections.forEach(c => {
                 if(c.conn && c.conn.open) {
-                    c.conn.send({ type: 'HEARTBEAT', page: pageNum });
+                    try {
+                        c.conn.send({ type: 'HEARTBEAT', page: pageNum });
+                    } catch(e) {}
                 }
             });
             const now = Date.now();
             const beforeCount = connections.length;
-            connections = connections.filter(c => (now - c.lastPong) < 10000);
+            connections = connections.filter(c => c.conn && c.conn.open && (now - c.lastPong) < 15000);
             if(connections.length !== beforeCount) {
                 updateClientList();
                 renderTeacherMatrix();
                 updateHandOverlay();
             }
-        }, 2000);
+        }, 2500);
         peer.on('connection', conn => {
-            connections = connections.filter(c => c.id !== conn.peer);
             const client = { 
                 id: conn.peer, 
                 conn: conn, 
@@ -2656,25 +2682,32 @@
                 handRaised: false,
                 lastPong: Date.now() 
             };
-            connections.push(client);
-            updateClientList();
-            const handleClientOpen = () => {
+            const setupConnection = () => {
+                connections = connections.filter(c => c.id !== conn.peer);
                 client.lastPong = Date.now();
+                connections.push(client);
                 updateClientList();
                 renderTeacherMatrix();
-                conn.send({
-                    type: 'INIT_EXAM_INFO',
-                    approved: studentsApproved,
-                    students: studentsApproved ? registeredStudents : [],
-                    claims: studentClaims,
-                    examStarted: examStarted,
-                    url: activeSourceUrl
-                });
+                try {
+                    conn.send({
+                        type: 'INIT_EXAM_INFO',
+                        approved: studentsApproved,
+                        students: studentsApproved ? registeredStudents : [],
+                        claims: studentClaims,
+                        examStarted: examStarted,
+                        url: activeSourceUrl
+                    });
+                    if (examStarted && activeSourceUrl) {
+                        syncSingleClient(client);
+                    }
+                } catch(e) {
+                    console.warn("Failed to send initial exam info to client", e);
+                }
             };
             if (conn.open) {
-                handleClientOpen();
+                setupConnection();
             } else {
-                conn.on('open', handleClientOpen);
+                conn.on('open', setupConnection);
             }
             conn.on('data', data => {
                 client.lastPong = Date.now();
@@ -2684,23 +2717,29 @@
                         conn.send({ type: 'CLAIM_RESULT', success: false, msg: 'Список студентів ще не затверджено або прізвище відсутнє!' });
                         return;
                     }
-                    const claimedAlready = Object.values(studentClaims).includes(data.name);
-                    if (claimedAlready) {
+                    const existingPeerId = Object.keys(studentClaims).find(k => studentClaims[k] === data.name);
+                    const isAlreadyClaimedByOtherOnline = existingPeerId && existingPeerId !== conn.peer && connections.some(c => c.id === existingPeerId && c.conn && c.conn.open);
+                    if (isAlreadyClaimedByOtherOnline) {
                         conn.send({ type: 'CLAIM_RESULT', success: false, msg: 'Це ім’я вже обрано іншим студентом!' });
                     } else {
+                        if (existingPeerId && existingPeerId !== conn.peer) {
+                            delete studentClaims[existingPeerId];
+                        }
                         studentClaims[conn.peer] = data.name;
                         if (!studentViolations[conn.peer]) studentViolations[conn.peer] = 0;
                         conn.send({ type: 'CLAIM_RESULT', success: true, name: data.name });
                         const card = studentCards.find(c => c.name.trim() === data.name.trim());
                         const isActive = card ? !!card.active : false;
                         const remaining = (card && cardTimers[card.id]) ? cardTimers[card.id].remaining : null;
-                        conn.send({
-                            type: 'INDIVIDUAL_TASK',
-                            name: data.name,
-                            task: isActive ? (studentTasks[data.name] || '') : '',
-                            active: isActive,
-                            duration: remaining
-                        });
+                        try {
+                            conn.send({
+                                type: 'INDIVIDUAL_TASK',
+                                name: data.name,
+                                task: isActive ? (studentTasks[data.name] || '') : '',
+                                active: isActive,
+                                duration: remaining
+                            });
+                        } catch(e) {}
                         broadcast({ type: 'CLAIMS_UPDATE', claims: studentClaims });
                         renderTeacherMatrix();
                         if (examStarted) syncSingleClient(client);
@@ -2712,13 +2751,15 @@
                         const card = studentCards.find(c => c.name.trim() === stName.trim());
                         const isActive = card ? !!card.active : false;
                         const remaining = (card && cardTimers[card.id]) ? cardTimers[card.id].remaining : null;
-                        conn.send({
-                            type: 'INDIVIDUAL_TASK',
-                            name: stName,
-                            task: isActive ? (studentTasks[stName] || '') : '',
-                            active: isActive,
-                            duration: remaining
-                        });
+                        try {
+                            conn.send({
+                                type: 'INDIVIDUAL_TASK',
+                                name: stName,
+                                task: isActive ? (studentTasks[stName] || '') : '',
+                                active: isActive,
+                                duration: remaining
+                            });
+                        } catch(e) {}
                     }
                     if (examStarted) syncSingleClient(client);
                 }
@@ -2731,10 +2772,12 @@
                     client.ready = true;
                     updateClientList();
                     if(examStarted) {
-                        conn.send({ type: 'PAGE', value: pageNum });
-                        if(pageMarks[pageNum]) {
-                            pageMarks[pageNum].forEach(line => conn.send({ type: 'DRAW', coords: line }));
-                        }
+                        try {
+                            conn.send({ type: 'PAGE', value: pageNum });
+                            if(pageMarks[pageNum]) {
+                                pageMarks[pageNum].forEach(line => conn.send({ type: 'DRAW', coords: line }));
+                            }
+                        } catch(e) {}
                     }
                 }
                 if (data.type === 'HAND') {
@@ -2743,21 +2786,23 @@
                     renderTeacherMatrix();
                 }
                 if (data.type === 'RESYNC_REQ') {
-                    conn.send({ type: 'PAGE', value: pageNum });
-                    if(pageMarks[pageNum]) {
-                        pageMarks[pageNum].forEach(line => conn.send({ type: 'DRAW', coords: line }));
-                    }
+                    try {
+                        conn.send({ type: 'PAGE', value: pageNum });
+                        if(pageMarks[pageNum]) {
+                            pageMarks[pageNum].forEach(line => conn.send({ type: 'DRAW', coords: line }));
+                        }
+                    } catch(e) {}
                 }
             });
             conn.on('close', () => {
-                connections = connections.filter(c => c.conn !== conn);
+                connections = connections.filter(c => c.conn !== conn && c.id !== conn.peer);
                 updateClientList();
                 renderTeacherMatrix();
                 updateHandOverlay();
             });
             conn.on('error', (err) => {
-                console.error("Teacher connection error:", err);
-                connections = connections.filter(c => c.conn !== conn);
+                console.warn("Connection error with peer:", conn.peer, err);
+                connections = connections.filter(c => c.conn !== conn && c.id !== conn.peer);
                 updateClientList();
                 renderTeacherMatrix();
                 updateHandOverlay();
@@ -2821,15 +2866,23 @@
         }
     }
     function syncSingleClient(client) {
+        if (!client || !client.conn || !client.conn.open) return;
         client.ready = false;
         updateClientList();
-        if (!client.conn || !client.conn.open) return;
-        client.conn.send({ type: 'START_EXAM', url: activeSourceUrl });
+        try {
+            client.conn.send({ type: 'START_EXAM', url: activeSourceUrl });
+        } catch(e) {
+            console.warn("Failed to send START_EXAM to", client.id, e);
+        }
     }
     function broadcast(msg) {
-        connections.forEach(c => { if(c.conn && c.conn.open) c.conn.send(msg); });
+        connections.forEach(c => { 
+            if(c.conn && c.conn.open) {
+                try { c.conn.send(msg); } catch(e) {}
+            }
+        });
     }
-    // --- STUDENT JOIN FLOW ---
+    // --- STUDENT JOIN FLOW WITH ROBUST CLOUD / INTERNET CONNECTION ---
     function joinExamSession(id, pageParam) {
         let hostId = id || getLockCode(); 
         hostId = hostId.replace(/\s/g, '');
@@ -2846,171 +2899,204 @@
         updateToolbarForRole();
         if(html5QrcodeScanner) try { html5QrcodeScanner.clear(); } catch(e){}
         if (peer) {
-            try { peer.destroy(); } catch(e){}
+            try { peer.destroy(); } catch(e) {}
+            peer = null;
         }
         peer = new Peer(undefined, PEER_CONFIG);
         peer.on('error', (err) => {
+            console.warn("Student peer error:", err);
             if(err.type === 'peer-unavailable') {
                 showNotification('Сесію викладача не знайдено. Перевірте код.', true);
                 setTimeout(() => location.reload(), 3000);
-            } else {
-                console.error("Student peer error:", err);
+            } else if (err.type === 'network' || err.type === 'server-error' || err.type === 'socket-error') {
+                document.getElementById('loading-msg').innerHTML = 
+                    "Проблема зі з'єднанням із сервером.<br><span style='font-size:0.8rem;'>Повторна спроба підключення...</span>";
             }
         });
+        peer.on('disconnected', () => {
+            try { peer.reconnect(); } catch(e) {}
+        });
         peer.on('open', () => {
-            const conn = peer.connect(hostId, { reliable: true });
-            hostConnection = conn;
-            const handleStudentOpen = () => {
-                document.getElementById('loading-msg').innerText = "З'єднано. Очікування викладача...";
-                renderStudentSharePanel();
-            };
-            if (conn.open) {
-                handleStudentOpen();
-            } else {
-                conn.on('open', handleStudentOpen);
+            connectStudentToHost(hostId);
+        });
+    }
+    function connectStudentToHost(hostId) {
+        if (!peer || peer.destroyed) return;
+        document.getElementById('loading-msg').innerText = "Встановлення захищеного з'єднання з викладачем...";
+        const conn = peer.connect(hostId, { reliable: true });
+        hostConnection = conn;
+        const onConnectOpen = () => {
+            document.getElementById('loading-msg').innerText = "З'єднано. Очікування викладача...";
+            renderStudentSharePanel();
+            if (myStudentName) {
+                try {
+                    conn.send({ type: 'CLAIM_IDENTITY', name: myStudentName });
+                } catch(e) {}
             }
-            conn.on('error', (err) => {
-                console.error("Student connection error:", err);
-            });
-            conn.on('data', async data => {
-                if (data.type === 'HEARTBEAT') {
-                    conn.send({ type: 'PONG' });
-                    if(pdfDoc && !pageRendering && pageNum !== data.page) {
-                        pageNum = data.page;
-                        clearDrawings(false); 
-                        queueRenderPage(pageNum);
-                        conn.send({ type: 'RESYNC_REQ' });
-                    }
-                    return;
+        };
+        if (conn.open) {
+            onConnectOpen();
+        } else {
+            conn.on('open', onConnectOpen);
+        }
+        conn.on('error', (err) => {
+            console.warn("Connection error to host:", err);
+            document.getElementById('loading-msg').innerText = "Повторна спроба з'єднання з викладачем...";
+            setTimeout(() => {
+                if (!hostConnection || !hostConnection.open) {
+                    connectStudentToHost(hostId);
                 }
-                if (data.type === 'INIT_EXAM_INFO' || data.type === 'STUDENT_LIST_SYNC') {
-                    studentsApproved = !!data.approved;
-                    if (data.students) registeredStudents = data.students;
-                    if (data.claims) studentClaims = data.claims;
-                    if (studentsApproved && registeredStudents.length > 0) {
-                        if (!myStudentName) {
-                            showStudentClaimMenu(registeredStudents, studentClaims);
-                        }
-                    } else {
-                        if (!myStudentName) {
-                            showWaitingForTeacherApproval();
-                        }
+            }, 2500);
+        });
+        conn.on('close', () => {
+            if (myStudentName || examStarted) {
+                document.getElementById('loading-menu').classList.remove('hidden');
+                document.getElementById('loading-msg').innerHTML = 
+                    "Зв'язок з викладачем перервано.<br><span style='font-size:0.8rem;'>Спроба автоматичного відновлення...</span>";
+                setTimeout(() => {
+                    if (!hostConnection || !hostConnection.open) {
+                        connectStudentToHost(hostId);
                     }
+                }, 2500);
+            } else {
+                showNotification("Зв'язок з викладачем перервано!", true);
+            }
+        });
+        conn.on('data', async data => {
+            if (data.type === 'HEARTBEAT') {
+                try { conn.send({ type: 'PONG' }); } catch(e) {}
+                if(pdfDoc && !pageRendering && pageNum !== data.page) {
+                    pageNum = data.page;
+                    clearDrawings(false); 
+                    queueRenderPage(pageNum);
+                    try { conn.send({ type: 'RESYNC_REQ' }); } catch(e) {}
                 }
-                if (data.type === 'CLAIMS_UPDATE') {
-                    studentClaims = data.claims || {};
-                    if (!myStudentName && studentsApproved && registeredStudents.length > 0) {
+                return;
+            }
+            if (data.type === 'INIT_EXAM_INFO' || data.type === 'STUDENT_LIST_SYNC') {
+                studentsApproved = !!data.approved;
+                if (data.students) registeredStudents = data.students;
+                if (data.claims) studentClaims = data.claims;
+                if (studentsApproved && registeredStudents.length > 0) {
+                    if (!myStudentName) {
                         showStudentClaimMenu(registeredStudents, studentClaims);
                     }
+                } else {
+                    if (!myStudentName) {
+                        showWaitingForTeacherApproval();
+                    }
                 }
-                if (data.type === 'CLAIM_RESULT') {
-                    if (data.success) {
-                        myStudentName = data.name;
-                        startForensicWatermarking();
-                        renderStudentSharePanel();
-                        document.getElementById('loading-msg').innerText = "Ідентифіковано! Очікуйте активації вашого завдання викладачем...";
+            }
+            if (data.type === 'CLAIMS_UPDATE') {
+                studentClaims = data.claims || {};
+                if (!myStudentName && studentsApproved && registeredStudents.length > 0) {
+                    showStudentClaimMenu(registeredStudents, studentClaims);
+                }
+            }
+            if (data.type === 'CLAIM_RESULT') {
+                if (data.success) {
+                    myStudentName = data.name;
+                    startForensicWatermarking();
+                    renderStudentSharePanel();
+                    document.getElementById('loading-msg').innerText = "Ідентифіковано! Очікуйте активації вашого завдання викладачем...";
+                } else {
+                    showNotification(data.msg || "Помилка вибору імені", true);
+                    if (studentsApproved && registeredStudents.length > 0) {
+                        showStudentClaimMenu(registeredStudents, studentClaims);
                     } else {
-                        showNotification(data.msg || "Помилка вибору імені", true);
-                        if (studentsApproved && registeredStudents.length > 0) {
-                            showStudentClaimMenu(registeredStudents, studentClaims);
-                        } else {
-                            showWaitingForTeacherApproval();
-                        }
+                        showWaitingForTeacherApproval();
                     }
                 }
-                // INDIVIDUAL TASK ACTIVATION, TIMERS & SECURITY TRACKING
-                if (data.type === 'INDIVIDUAL_TASK') {
-                    isMyTaskActive = !!data.active;
-                    myIndividualTask = isMyTaskActive ? (data.task || '') : '';
-                    const taskCardEl = document.getElementById('student-task-card');
-                    const taskModalEl = document.getElementById('task-modal');
-                    const loadingMenuEl = document.getElementById('loading-menu');
-                    const loadingMsgEl = document.getElementById('loading-msg');
-                    const taskBtn = document.getElementById('btn-my-task');
-                    if (studentCountdownInterval) {
-                        clearInterval(studentCountdownInterval);
-                        studentCountdownInterval = null;
+            }
+            // INDIVIDUAL TASK ACTIVATION, TIMERS & SECURITY TRACKING
+            if (data.type === 'INDIVIDUAL_TASK') {
+                isMyTaskActive = !!data.active;
+                myIndividualTask = isMyTaskActive ? (data.task || '') : '';
+                const taskCardEl = document.getElementById('student-task-card');
+                const taskModalEl = document.getElementById('task-modal');
+                const loadingMenuEl = document.getElementById('loading-menu');
+                const loadingMsgEl = document.getElementById('loading-msg');
+                const taskBtn = document.getElementById('btn-my-task');
+                if (studentCountdownInterval) {
+                    clearInterval(studentCountdownInterval);
+                    studentCountdownInterval = null;
+                }
+                renderTaskToSecureCanvas('st-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
+                renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
+                if (isMyTaskActive) {
+                    document.getElementById('st-badge-name').innerText = myStudentName;
+                    if (taskBtn) {
+                        taskBtn.classList.remove('task-inactive');
+                        taskBtn.title = "Переглянути активне завдання";
                     }
-                    renderTaskToSecureCanvas('st-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
-                    renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
-                    if (isMyTaskActive) {
-                        document.getElementById('st-badge-name').innerText = myStudentName;
-                        if (taskBtn) {
-                            taskBtn.classList.remove('task-inactive');
-                            taskBtn.title = "Переглянути активне завдання";
-                        }
-                        if (data.duration && data.duration > 0) {
-                            let timeLeft = data.duration;
-                            updateStudentTimerUI(timeLeft);
-                            studentCountdownInterval = setInterval(() => {
-                                timeLeft--;
-                                if (timeLeft <= 0) {
-                                    clearInterval(studentCountdownInterval);
-                                    studentCountdownInterval = null;
-                                    updateStudentTimerUI(0);
-                                    isMyTaskActive = false;
-                                    renderTaskToSecureCanvas('st-task-canvas', myIndividualTask, myStudentName, false);
-                                    renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, false);
-                                } else {
-                                    updateStudentTimerUI(timeLeft);
-                                }
-                            }, 1000);
-                        } else {
-                            updateStudentTimerUI(null);
-                        }
-                        if (document.getElementById('ui-layer').classList.contains('hidden')) {
-                            showNotification("Викладач щойно активував ваше персональне завдання! Відкрийте розділ «Завдання» у меню.", false);
-                        } else {
-                            loadingMenuEl.classList.add('hidden');
-                            document.getElementById('student-identity-menu').classList.add('hidden');
-                            taskCardEl.classList.remove('hidden');
-                        }
-                        startForensicWatermarking();
+                    if (data.duration && data.duration > 0) {
+                        let timeLeft = data.duration;
+                        updateStudentTimerUI(timeLeft);
+                        studentCountdownInterval = setInterval(() => {
+                            timeLeft--;
+                            if (timeLeft <= 0) {
+                                clearInterval(studentCountdownInterval);
+                                studentCountdownInterval = null;
+                                updateStudentTimerUI(0);
+                                isMyTaskActive = false;
+                                renderTaskToSecureCanvas('st-task-canvas', myIndividualTask, myStudentName, false);
+                                renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, false);
+                            } else {
+                                updateStudentTimerUI(timeLeft);
+                            }
+                        }, 1000);
                     } else {
                         updateStudentTimerUI(null);
-                        if (taskModalEl) taskModalEl.style.display = 'none';
-                        if (taskBtn) {
-                            taskBtn.classList.add('task-inactive');
-                            taskBtn.title = "Завдання деактивовано";
-                        }
-                        if (!taskCardEl.classList.contains('hidden')) {
-                            taskCardEl.classList.add('hidden');
-                            loadingMenuEl.classList.remove('hidden');
-                            loadingMsgEl.innerHTML = `
-                                <span style="color:var(--color-error); font-weight:700;">Завдання деактивовано викладачем</span><br>
-                                <span style="font-size:0.8rem; font-weight:500; color:#666; margin-top:8px; display:block;">
-                                    Доступ до питання призупинено або час вичерпано. Очікуйте вказівки викладача.
-                                </span>`;
-                        }
                     }
+                    if (document.getElementById('ui-layer').classList.contains('hidden')) {
+                        showNotification("Викладач щойно активував ваше персональне завдання! Відкрийте розділ «Завдання» у меню.", false);
+                    } else {
+                        loadingMenuEl.classList.add('hidden');
+                        document.getElementById('student-identity-menu').classList.add('hidden');
+                        taskCardEl.classList.remove('hidden');
+                    }
+                    startForensicWatermarking();
+                } else {
+                    updateStudentTimerUI(null);
+                    if (taskModalEl) taskModalEl.style.display = 'none';
+                    if (taskBtn) {
+                        taskBtn.classList.add('task-inactive');
+                        taskBtn.title = "Завдання деактивовано";
+                    }
+                    if (!taskCardEl.classList.contains('hidden')) {
+                        taskCardEl.classList.add('hidden');
+                        loadingMenuEl.classList.remove('hidden');
+                        loadingMsgEl.innerHTML = `
+                            <span style="color:var(--color-error); font-weight:700;">Завдання деактивовано викладачем</span><br>
+                            <span style="font-size:0.8rem; font-weight:500; color:#666; margin-top:8px; display:block;">
+                                Доступ до питання призупинено або час вичерпано. Очікуйте вказівки викладача.
+                            </span>`;
+                    }
+                }
+                renderStudentSharePanel();
+            }
+            if (data.type === 'START_EXAM') {
+                document.getElementById('loading-msg').innerText = "Завантаження завдань екзамену...";
+                const ok = await renderPdf(data.url);
+                if(ok) {
+                    try { conn.send({ type: 'ACK_READY' }); } catch(e) {}
+                    examStarted = true;
+                    document.getElementById('ui-layer').classList.add('hidden');
+                    const currentUrl = window.location.href.split('?')[0] + '?host=' + currentHostId;
+                    document.getElementById('qr-modal-id').innerText = formatId(currentHostId);
+                    document.getElementById("qrcode-modal-tgt").innerHTML = "";
+                    new QRCode(document.getElementById("qrcode-modal-tgt"), { text: currentUrl, width: 220, height: 220, colorDark: "#000000" });
+                    startForensicWatermarking();
                     renderStudentSharePanel();
                 }
-                if (data.type === 'START_EXAM') {
-                    document.getElementById('loading-msg').innerText = "Завантаження завдань екзамену...";
-                    const ok = await renderPdf(data.url);
-                    if(ok) {
-                        conn.send({ type: 'ACK_READY' });
-                        examStarted = true;
-                        document.getElementById('ui-layer').classList.add('hidden');
-                        const currentUrl = window.location.href.split('?')[0] + '?host=' + currentHostId;
-                        document.getElementById('qr-modal-id').innerText = formatId(currentHostId);
-                        document.getElementById("qrcode-modal-tgt").innerHTML = "";
-                        new QRCode(document.getElementById("qrcode-modal-tgt"), { text: currentUrl, width: 220, height: 220, colorDark: "#000000" });
-                        startForensicWatermarking();
-                        renderStudentSharePanel();
-                    }
-                }
-                if (data.type === 'PAGE') {
-                    pageNum = data.value;
-                    clearDrawings(false); 
-                    if(pdfDoc) queueRenderPage(pageNum);
-                }
-                if (data.type === 'DRAW') receiveDraw(data.coords[0], data.coords[1], data.coords[2], data.coords[3]);
-                if (data.type === 'CLEAR') clearDrawings(true);
-            });
-            conn.on('close', () => {
-                showNotification("Зв'язок з викладачем перервано!", true);
-            });
+            }
+            if (data.type === 'PAGE') {
+                pageNum = data.value;
+                clearDrawings(false); 
+                if(pdfDoc) queueRenderPage(pageNum);
+            }
+            if (data.type === 'DRAW') receiveDraw(data.coords[0], data.coords[1], data.coords[2], data.coords[3]);
+            if (data.type === 'CLEAR') clearDrawings(true);
         });
     }
 </script>
