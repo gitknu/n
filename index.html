@@ -14,812 +14,198 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
 <style>
-    :root {
-        --color-bg: #222222;
-        --color-card: #ffffff;
-        --color-attention-high: #b80000;
-        --color-attention-med: #0b5394;
-        --color-hand: #f59e0b;
-        --color-success: #2e7d32;
-        --color-error: #c62828;
-        --color-text: #000000;
-        --color-border: #cccccc;
-        --shadow: 0 4px 20px rgba(0,0,0,0.15);
-        --landscape-rotation: 0deg; 
-        --toolbar-size: 75px;
-    }
-    * { 
-        box-sizing: border-box; 
-        touch-action: manipulation; 
-        -webkit-tap-highlight-color: transparent;
-        user-select: none !important;
-        -webkit-user-select: none !important;
-        -webkit-touch-callout: none !important;
-    }
-    input, textarea {
-        user-select: text !important;
-        -webkit-user-select: text !important;
-    }
-    @media print {
-        html, body, * { display: none !important; visibility: hidden !important; }
-    }
-    body {
-        margin: 0; padding: 0;
-        background-color: var(--color-bg);
-        color: var(--color-text);
-        font-family: 'Montserrat', sans-serif;
-        font-size: 16px;
-        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        height: 100dvh; width: 100%;
-        overflow: hidden; 
-        display: flex; flex-direction: column; 
-    }
-    /* --- FORENSIC WATERMARK & DRM OVERLAYS --- */
-    #forensic-watermark {
-        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        pointer-events: none !important;
-        z-index: 180;
-        display: none;
-    }
-    #drm-curtain {
-        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background: #000000 !important;
-        color: #ffffff;
-        z-index: 999999;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        text-align: center; padding: 25px;
-    }
-    #drm-curtain i { width: 80px; height: 80px; margin-bottom: 20px; color: var(--color-attention-high); }
-    #drm-curtain h2 { font-size: 1.6rem; margin: 0 0 10px 0; color: #ff4d4d; letter-spacing: 1px; font-weight: 800; }
-    #drm-curtain p { max-width: 480px; font-size: 0.95rem; color: #d1d5db; margin: 0 0 25px 0; line-height: 1.5; }
-    /* HARDENED SCREENSHOT BLACKOUT CLASS */
-    body.drm-blackout #student-task-card,
-    body.drm-blackout #pdf-container,
-    body.drm-blackout .task-canvas-wrapper,
-    body.drm-blackout #task-modal,
-    body.drm-blackout #ui-layer,
-    body.drm-blackout #student-share-panel {
-        filter: blur(50px) brightness(0) !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-    }
-    /* --- STUDENT PRESERVED VIRAL SHARING PANEL --- */
-    #student-share-panel {
-        position: fixed;
-        background: #ffffff;
-        border: 2px solid var(--color-attention-med);
-        box-shadow: 0 4px 18px rgba(0,0,0,0.15);
-        z-index: 215;
-        display: flex;
-        flex-direction: column;
-        padding: 8px 10px;
-        box-sizing: border-box;
-    }
-    .share-panel-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-        margin-bottom: 4px;
-    }
-    .share-panel-title {
-        font-size: 0.72rem;
-        font-weight: 800;
-        color: #1e293b;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-    }
-    .share-panel-body {
-        display: flex;
-        align-items: center;
-        width: 100%;
-        flex: 1;
-        gap: 8px;
-    }
-    #student-qr-container {
-        background: white;
-        padding: 3px;
-        border: 1.5px solid var(--color-attention-med);
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-    #student-qr-container img, #student-qr-container canvas {
-        max-width: 100%;
-        max-height: 100%;
-        display: block;
-    }
-    .share-panel-info {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        flex: 1;
-        gap: 3px;
-    }
-    /* Mobile: 1/3 screen preserved for sharing */
-    @media (max-width: 767px) {
-        #student-share-panel {
-            top: 0; left: 0; width: 100%;
-            height: 32vh; min-height: 160px; max-height: 220px;
-            border-radius: 0 0 16px 16px;
-            border-top: none;
-        }
-        #student-qr-container {
-            width: 95px; height: 95px;
-        }
-        body.student-connected #ui-layer {
-            top: 32vh;
-            height: 68vh;
-            padding: 8px;
-        }
-        body.student-connected #pdf-container {
-            margin-top: 32vh;
-            height: calc(100dvh - 32vh - var(--toolbar-size));
-        }
-    }
-    /* Desktop / Tablet: Preserved in Top-Left Corner */
-    @media (min-width: 768px) {
-        #student-share-panel {
-            top: 14px; left: 14px;
-            width: 220px; height: auto;
-            border-radius: 14px;
-        }
-        .share-panel-body {
-            flex-direction: column;
-            gap: 6px;
-        }
-        #student-qr-container {
-            width: 115px; height: 115px;
-        }
-        body.student-connected #ui-layer {
-            padding-left: 240px;
-        }
-    }
-    body.fullscreen-mode #student-share-panel {
-        display: none !important;
-    }
-    /* --- UI OVERLAYS --- */
-    #ui-layer {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(244, 244, 244, 1); z-index: 200;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        padding: 12px;
-    }
-    .card {
-        background: var(--color-card); 
-        color: var(--color-text);
-        padding: 1rem; 
-        border-radius: 1.2rem;
-        text-align: center; 
-        width: 100%; max-width: 440px;
-        height: auto;
-        max-height: 96%; 
-        overflow-y: auto;
-        display: flex; flex-direction: column; 
-        align-items: center;
-        justify-content: flex-start;
-        box-shadow: var(--shadow);
-        border: 2px solid var(--color-border);
-        gap: 8px;
-        transition: all 0.3s ease;
-    }
-    .hidden { display: none !important; }
-    h3 { margin: 0; color: var(--color-text); font-weight: 700; font-size: 1.15rem; flex-shrink: 0; }
-    p.card-desc { margin: 0; font-size: 0.8rem; color: #555; }
-    /* --- ROLE BUTTONS --- */
-    #role-menu {
-        display: flex; flex-direction: column; gap: 15px;
-        width: 100%; max-width: 500px;
-        height: 100%; padding: 10px 0;
-        justify-content: center;
-    }
-    .role-btn {
-        flex: 1; max-height: 40vh; 
-        border: none; border-radius: 1.2rem;
-        font-family: 'Montserrat', sans-serif;
-        font-size: clamp(1.4rem, 4vw, 1.8rem); 
-        font-weight: 800;
-        color: white; cursor: pointer;
-        display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-        gap: 15px;
-        box-shadow: 0 6px 15px rgba(0,0,0,0.2);
-        transition: transform 0.15s, box-shadow 0.15s;
-        text-transform: uppercase;
-    }
-    .role-btn:active { transform: scale(0.97); }
-    .role-listener { background-color: var(--color-attention-high); border: 2px solid var(--color-attention-high); }
-    .role-speaker { background-color: var(--color-attention-med); border: 2px solid var(--color-attention-med); }
-    /* --- ACTION BAR --- */
-    .action-bar {
-        display: flex; width: 100%; gap: 10px; margin-top: 6px; flex-shrink: 0;
-    }
-    button.btn-primary {
-        background: var(--color-attention-high); 
-        color: white; border: none; 
-        padding: 0.65rem; 
-        font-size: 1.05rem; font-family: 'Montserrat', sans-serif; font-weight: 700;
-        border-radius: 0.8rem; cursor: pointer; 
-        flex: 2; 
-        display: flex; align-items: center; justify-content: center; gap: 10px;
-        box-shadow: 0 4px 10px rgba(184, 0, 0, 0.3); text-transform: uppercase;
-        transition: background-color 0.2s, transform 0.1s;
-    }
-    button.btn-primary:active { transform: scale(0.98); }
-    button.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
-    button.btn-secondary { 
-        background: white; color: var(--color-attention-med); border: 2px solid var(--color-attention-med); 
-        padding: 0.6rem; 
-        font-size: 1rem; font-weight: 600;
-        border-radius: 0.8rem; cursor: pointer;
-        flex: 1; 
-        display: flex; align-items: center; justify-content: center;
-        font-family: 'Montserrat', sans-serif; 
-        transition: background-color 0.2s;
-    }
-    button.btn-secondary:active { background: #f0f8ff; }
-    .icon-btn-group {
-        display: flex; gap: 8px; margin-top: 4px;
-    }
-    .icon-btn {
-        background: #f0f0f0; border: 1px solid #ddd;
-        border-radius: 8px; padding: 6px 12px;
-        color: #555; cursor: pointer;
-        display: flex; align-items: center; gap: 6px;
-        font-size: 0.8rem; font-weight: 600;
-        transition: all 0.2s;
-    }
-    .icon-btn:active { transform: scale(0.95); background: #e0e0e0; }
-    .icon-btn i { width: 16px; height: 16px; }
-    .btn-success { background: #e8f5e9; color: var(--color-success); border-color: var(--color-success); }
-    .btn-approve { background: #e8f5e9; color: var(--color-success); border-color: var(--color-success); font-weight: 700; }
-    .btn-danger-action {
-        background: #fff5f5 !important;
-        color: var(--color-error) !important;
-        border-color: #fca5a5 !important;
-    }
-    .btn-danger-action:hover {
-        background: #fee2e2 !important;
-        color: #991b1b !important;
-    }
-    input[type="text"], input[type="password"], input[type="tel"], select, textarea {
-        padding: 0.55rem; 
-        width: 100%; background: #fff; 
-        border: 2px solid var(--color-attention-med); color: #111; 
-        border-radius: 0.8rem; outline: none;
-        font-size: 0.9rem; text-align: left;
-        font-family: 'Montserrat', sans-serif; font-weight: 600; flex-shrink: 0;
-        transition: border-color 0.3s, background-color 0.3s;
-    }
-    textarea { 
-        resize: vertical; min-height: 70px; font-weight: 500; font-size: 0.8rem; 
-        line-height: 1.35;
-    }
-    textarea::placeholder {
-        color: #999;
-        font-style: italic;
-    }
-    select { cursor: pointer; background: #fff; }
-    input.input-success { border-color: var(--color-success) !important; background-color: #e8f5e9 !important; color: var(--color-success) !important; }
-    input.input-error { border-color: var(--color-error) !important; background-color: #ffebee !important; color: var(--color-error) !important; }
-    /* --- TEACHER DESKTOP WIDESCREEN & MATRIX STYLES --- */
-    .speaker-dashboard {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        width: 100%;
-        height: 100%;
-    }
-    .matrix-wrapper {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        flex: 1;
-        min-height: 0;
-        border: 1px solid var(--color-border);
-        border-radius: 12px;
-        background: #fdfdfd;
-        padding: 10px;
-    }
-    .matrix-toolbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 8px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #eee;
-    }
-    .matrix-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 12px;
-        overflow-y: auto;
-        padding-right: 6px;
-        flex: 1;
-        min-height: 160px;
-    }
-    .matrix-grid::-webkit-scrollbar {
-        width: 6px;
-    }
-    .matrix-grid::-webkit-scrollbar-thumb {
-        background: #ccc;
-        border-radius: 4px;
-    }
-    /* WYSIWYG Student Card */
-    .student-card {
-        background: #ffffff;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        text-align: left;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-        position: relative;
-    }
-    .student-card:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        border-color: #cbd5e1;
-    }
-    .student-card.active-task {
-        border-color: var(--color-success);
-        background: #fcfdfc;
-        box-shadow: 0 0 0 1px var(--color-success), 0 3px 10px rgba(46, 125, 50, 0.15);
-    }
-    .student-card.online {
-        border-left: 5px solid var(--color-success);
-    }
-    .student-card-header {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        width: 100%;
-    }
-    .student-name-input {
-        flex: 1;
-        font-weight: 700;
-        font-size: 0.88rem;
-        color: #1e293b;
-        border: 1px solid transparent;
-        background: #f8fafc;
-        border-radius: 6px;
-        padding: 5px 8px;
-        outline: none;
-        transition: all 0.2s;
-        font-family: inherit;
-    }
-    .student-name-input:hover {
-        border-color: #cbd5e1;
-        background: #ffffff;
-    }
-    .student-name-input:focus {
-        border-color: var(--color-attention-med);
-        background: #ffffff;
-        box-shadow: 0 0 0 2px rgba(11, 83, 148, 0.15);
-    }
-    .status-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        flex-shrink: 0;
-    }
-    .status-dot.online {
-        background-color: var(--color-success);
-        box-shadow: 0 0 6px rgba(46, 125, 50, 0.6);
-    }
-    .status-dot.offline {
-        background-color: #cbd5e1;
-    }
-    .btn-card-icon {
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 4px;
-        color: #94a3b8;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.15s;
-    }
-    .btn-card-icon:hover {
-        background: #fee2e2;
-        color: var(--color-error);
-    }
-    .student-card-task {
-        font-size: 0.82rem;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 8px;
-        min-height: 60px;
-        max-height: 100px;
-        overflow-y: auto;
-        font-family: inherit;
-        font-weight: 500;
-        resize: vertical;
-        width: 100%;
-        line-height: 1.35;
-        transition: border-color 0.2s;
-    }
-    .student-card-task:focus {
-        border-color: var(--color-attention-med);
-        background: #ffffff;
-        outline: none;
-    }
-    .student-card-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 6px;
-        margin-top: auto;
-        padding-top: 4px;
-    }
-    .btn-matrix-toggle {
-        border: none;
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 0.72rem;
-        font-weight: 700;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        text-transform: uppercase;
-        transition: all 0.2s;
-        letter-spacing: 0.3px;
-    }
-    .btn-matrix-activate {
-        background: var(--color-attention-med);
-        color: white;
-        box-shadow: 0 2px 5px rgba(11, 83, 148, 0.25);
-    }
-    .btn-matrix-activate:hover {
-        background: #083c6c;
-        transform: translateY(-1px);
-    }
-    .btn-matrix-deactivate {
-        background: #fee2e2;
-        color: var(--color-error);
-        border: 1px solid #fca5a5;
-    }
-    .btn-matrix-deactivate:hover {
-        background: #fecaca;
-        color: #991b1b;
-    }
-    .btn-add-card {
-        background: var(--color-attention-med);
-        color: white;
-        border: none;
-        font-weight: 700;
-        border-radius: 8px;
-        padding: 6px 12px;
-        font-size: 0.8rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.2s;
-        box-shadow: 0 2px 6px rgba(11, 83, 148, 0.2);
-    }
-    .btn-add-card:hover {
-        background: #083c6c;
-        transform: translateY(-1px);
-    }
-    .btn-add-card:active {
-        transform: scale(0.97);
-    }
-    .task-inactive {
-        opacity: 0.5;
-        filter: grayscale(1);
-    }
-    /* Anti-OCR Protected Canvas Containers */
-    .task-canvas-wrapper {
-        width: 100%;
-        background: #ffffff;
-        border: 2px solid #cbd5e1;
-        border-radius: 10px;
-        overflow: hidden;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
-    }
-    .task-canvas-wrapper canvas {
-        display: block;
-        width: 100%;
-        pointer-events: none;
-    }
-    /* --- DESKTOP ADAPTATION --- */
-    @media (min-width: 900px) {
-        #ui-layer { padding: 20px; }
-        #role-menu {
-            flex-direction: row;
-            max-width: 760px;
-            max-height: 320px;
-            gap: 24px;
-        }
-        .role-btn {
-            height: 100%;
-            max-height: 100%;
-            padding: 2.5rem 1.5rem;
-            font-size: 1.6rem;
-        }
-        #speaker-menu.card {
-            max-width: 1400px;
-            width: 96vw;
-            height: 92vh;
-            max-height: 92vh;
-            padding: 1.2rem;
-            overflow: hidden;
-        }
-        .speaker-dashboard {
-            display: grid;
-            grid-template-columns: 330px 1fr;
-            gap: 16px;
-            height: calc(100% - 40px);
-            overflow: hidden;
-            text-align: left;
-        }
-        .speaker-left-col {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            height: 100%;
-            overflow-y: auto; 
-            padding-right: 4px;
-        }
-        .speaker-right-col {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            min-height: 0;
-            overflow: hidden;
-        }
-        #listener-menu.card, #student-identity-menu.card, #loading-menu.card, #student-task-card.card {
-            max-width: 520px;
-            padding: 1.5rem;
-        }
-    }
-    @media (hover: hover) and (pointer: fine) {
-        .role-btn:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.25);
-        }
-        button.btn-primary:hover:not(:disabled) {
-            filter: brightness(1.08);
-            transform: translateY(-1px);
-        }
-        button.btn-secondary:hover {
-            background: #f0f8ff;
-        }
-        .icon-btn:hover {
-            background: #e4e4e4;
-        }
-        .btn-approve:hover {
-            background: #c8e6c9 !important;
-        }
-    }
-    /* --- LOCKER INTERFACE --- */
-    #lock-ui-wrapper {
-        display: flex; flex-direction: column; width: 100%; align-items: center;
-        margin: 5px 0; position: relative; 
-    }
-    #ghost-input {
-        position: absolute; opacity: 0; top: 0; left: 0;
-        width: 100%; height: 100%; z-index: 10; pointer-events: none;
-    }
-    #lock-container {
-        display: flex; justify-content: center; align-items: center;
-        gap: 4px; width: 100%; user-select: none; flex-shrink: 0;
-        perspective: 500px; transition: box-shadow 0.3s; border-radius: 10px; padding: 4px;
-    }
-    #lock-container.focused {
-        box-shadow: 0 0 0 2px var(--color-attention-med);
-        background-color: rgba(11, 83, 148, 0.05);
-    }
-    .lock-group { display: flex; gap: 2px; }
-    .lock-spacer { width: 8px; }
-    .lock-roller {
-        width: 34px; height: 48px; background: #fff; border: 2px solid #ccc;
-        border-radius: 6px; font-size: 1.6rem; font-weight: 800; color: var(--color-text);
-        display: flex; align-items: center; justify-content: center; cursor: grab;
-        position: relative; overflow: hidden; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
-        touch-action: none; transition: border-color 0.2s;
-    }
-    .lock-roller::before {
-        content: ''; position: absolute; top:0; left:0; right:0; height: 10px;
-        background: linear-gradient(to bottom, rgba(0,0,0,0.2), transparent); pointer-events: none;
-    }
-    .lock-roller::after {
-        content: ''; position: absolute; bottom:0; left:0; right:0; height: 10px;
-        background: linear-gradient(to top, rgba(0,0,0,0.2), transparent); pointer-events: none;
-    }
-    .lock-roller:active { cursor: grabbing; border-color: var(--color-attention-med); }
-    .lock-roller span { z-index: 1; pointer-events: none; }
-    .lock-arrow-row { display: flex; justify-content: center; gap: 4px; width: 100%; color: #999; margin: 2px 0; }
-    .lock-arrow-group { display: flex; gap: 2px; }
-    .lock-arrow-spacer { width: 8px; }
-    .arrow-icon { width: 34px; height: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-    .arrow-icon:active { transform: scale(0.9); color: var(--color-attention-med); }
-    .arrow-icon svg { width: 16px; height: 16px; stroke-width: 3px; }
-    /* --- QR SCANNER --- */
-    #reader {
-        width: 100%; max-width: 280px; margin: 0 auto;
-        background: #000; border: 2px solid var(--color-attention-med);
-        border-radius: 10px; overflow: hidden; min-height: 200px;
-    }
-    #reader video { width: 100%; height: 100%; object-fit: cover; display: block; }
-    #reader__dashboard_section_csr button {
-        background-color: var(--color-attention-high) !important;
-        color: white !important; border: none !important;
-        padding: 8px 16px !important; border-radius: 8px !important;
-        font-family: 'Montserrat', sans-serif !important; font-weight: 700 !important;
-        margin: 10px auto !important; display: block !important; cursor: pointer;
-    }
-    #html5-qrcode-anchor-scan-type-change { display: none !important; }
-    #qr-container {
-        background:white; padding:4px; display:inline-flex; 
-        align-items: center; justify-content: center;
-        border: 2px solid var(--color-attention-med); border-radius: 10px;
-        flex-shrink: 1; max-height: 15vh; aspect-ratio: 1/1;
-    }
-    #qr-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    /* --- PDF VIEWER --- */
-    #pdf-container {
-        flex: 1; width: 100%; min-height: 0; min-width: 0;
-        position: relative; background: #222; 
-        display: flex; justify-content: center; align-items: center;
-        padding: 0; overflow: hidden; 
-    }
-    body.fullscreen-mode #toolbar { display: none !important; }
-    body.fullscreen-mode #pdf-container { width: 100%; height: 100%; background: black; }
-    body.fullscreen-mode #fs-controls { display: block !important; }
-    .canvas-wrapper {
-        position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.5); background: white;
-        max-width: 100%; max-height: 100%; display: flex; 
-    }
-    canvas#the-canvas { display: block; max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
-    canvas#draw-canvas {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        touch-action: none; cursor: crosshair; pointer-events: none; 
-    }
-    /* HAND & OFFLINE OVERLAYS */
-    #hand-overlay {
-        position: absolute; top: 10px; left: 10px;
-        background: rgba(255, 255, 255, 0.95);
-        border: 2px solid var(--color-hand); border-radius: 20px;
-        padding: 8px 16px; display: flex; align-items: center; gap: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 50; font-weight: 700; color: #000;
-    }
-    #offline-indicator {
-        position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
-        background: rgba(100, 100, 100, 0.95); color: white; border-radius: 20px;
-        padding: 8px 16px; display: flex; align-items: center; gap: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 250; font-weight: 600; font-size: 0.9rem;
-    }
-    .bounce { animation: bounce 0.5s infinite alternate; }
-    @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-5px); } }
-    .spin { animation: spin 1s linear infinite; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .touch-zone { position: fixed; top: 0; bottom: 80px; width: 15%; z-index: 10; }
-    #zone-prev { left: 0; }
-    #zone-next { right: 0; }
-    /* Modal Base */
-    .modal-overlay {
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.7); z-index: 300;
-        justify-content: center; align-items: center; flex-direction: column; padding: 15px;
-    }
-    .modal-content { 
-        background: white; padding: 1.5rem; border-radius: 1.5rem; 
-        box-shadow: var(--shadow); border: 2px solid var(--color-attention-med);
-        display: flex; flex-direction: column; align-items: center; text-align: center;
-        max-width: 92%; width: 440px;
-    }
-    /* --- TOOLBAR --- */
-    #toolbar {
-        width: 100%; height: auto; min-height: var(--toolbar-size);
-        flex: 0 0 auto; padding-bottom: env(safe-area-inset-bottom);
-        background-color: var(--color-attention-med);
-        display: flex; justify-content: center; align-items: center; gap: 2px;
-        box-shadow: 0 -4px 15px rgba(0,0,0,0.2); z-index: 50; position: relative; 
-    }
-    @media (orientation: landscape) {
-        body { flex-direction: row; }
-        #toolbar {
-            width: var(--toolbar-size); height: 100%; flex: 0 0 var(--toolbar-size);
-            flex-direction: column; box-shadow: -4px 0 15px rgba(0,0,0,0.2);
-            padding-bottom: 0; padding-right: env(safe-area-inset-right); min-height: 0;
-        }
-        #page-info { transform: rotate(var(--landscape-rotation)); margin: 5px 0; }
-        .tool-btn { width: 100%; height: auto; min-height: 50px; }
-    }
-    #page-info { 
-        color: white; font-size: 1rem; font-weight: 600; 
-        min-width: 45px; text-align: center; white-space: nowrap; margin: 0 2px;
-        transition: transform 0.3s ease; transform: rotate(var(--landscape-rotation));
-    }
-    .tool-btn {
-        background: none; border: none; color: white; cursor: pointer; padding: 0;
-        display: flex; align-items: center; justify-content: center;
-        flex-shrink: 1; min-width: 44px; height: 100%; position: relative; 
-    }
-    .tool-btn:active .btn-inner { background-color: rgba(255,255,255,0.2); border-radius: 8px; }
-    .btn-inner {
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        padding: 4px; transition: transform 0.3s ease; width: 100%; height: 100%;
-        position: relative; transform: rotate(var(--landscape-rotation));
-    }
-    .btn-inner span { font-size: 0.65rem; margin-top: 3px; font-weight: 500; white-space: nowrap; }
-    .tool-btn.danger { color: #ffcccc; } 
-    .hand-active .btn-inner { color: var(--color-hand) !important; background: rgba(255,255,255,0.1); border-radius: 8px; }
-    .hand-active i { fill: var(--color-hand); }
-    .hand-timer-svg {
-        position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-90deg);
-        width: 36px; height: 36px; pointer-events: none; display: none; z-index: 0; transition: top 0.2s; 
-    }
-    #fs-hand .hand-timer-svg { top: 50%; width: 60px; height: 60px; }
-    .hand-active .hand-timer-svg, .fs-btn-active .hand-timer-svg { display: block; }
-    #btn-hand.hand-active span { display: none; }
-    #btn-hand.hand-active .hand-timer-svg { top: 50%; }
-    .hand-timer-path {
-        fill: none; stroke: var(--color-hand); stroke-width: 3; stroke-dasharray: 100, 100; stroke-dashoffset: 0;
-    }
-    .hand-active .hand-timer-path, .fs-btn-active .hand-timer-path { animation: timeCircle 10s linear forwards; }
-    @keyframes timeCircle { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 100; } }
-    #fs-controls {
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 150;
-    }
-    #fs-exit, #fs-hand, #fs-page-info { pointer-events: auto; transition: transform 0.3s ease; }
-    #fs-exit {
-        position: absolute; top: 20px; right: 20px; background: rgba(0, 0, 0, 0.6); color: white;
-        border: none; border-radius: 50%; width: 44px; height: 44px;
-        display: flex; align-items: center; justify-content: center; cursor: pointer;
-        transform: rotate(var(--landscape-rotation));
-    }
-    #fs-page-info {
-        position: absolute; top: 20px; left: 20px; background: rgba(0, 0, 0, 0.6); color: white;
-        padding: 8px 16px; border-radius: 20px; font-weight: 700; font-size: 0.9rem;
-        transform: rotate(var(--landscape-rotation)); origin: center;
-    }
-    #fs-hand {
-        position: absolute; bottom: 30px; right: 20px; background: white; color: #aaa;
-        border: 2px solid #ccc; border-radius: 50%; width: 64px; height: 64px;
-        display: flex; align-items: center; justify-content: center; cursor: pointer;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3); transform: rotate(var(--landscape-rotation));
-    }
-    #fs-hand:active { transform: scale(0.95); }
-    .fs-btn-active { background-color: var(--color-hand) !important; color: white !important; border: none !important; }
-    .id-display {
-        font-size: 1.4rem; font-weight: 800; color: var(--color-attention-med);
-        background: #f0f8ff; padding: 4px 8px; border-radius: 10px;
-        border: 2px dashed var(--color-attention-med); letter-spacing: 2px;
-        user-select: text; flex-shrink: 0;
-    }
-    .id-label { font-size: 0.7rem; text-transform: uppercase; color: #666; font-weight: 700; }
-    .badge {
-        padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 700;
-    }
-    .badge-ok { background: #e8f5e9; color: var(--color-success); }
-    .badge-warn { background: #ffebee; color: var(--color-error); }
-    .badge-wait { background: #fff3e0; color: #e65100; }
+:root{--color-bg:#222;--color-card:#fff;--color-attention-high:#b80000;--color-attention-med:#0b5394;--color-hand:#f59e0b;--color-success:#2e7d32;--color-error:#c62828;--color-text:#000;--color-border:#ccc;--shadow:0 4px 20px rgba(0,0,0,0.15);--landscape-rotation:0deg;--toolbar-size:75px;}
+*{box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;}
+input,textarea{user-select:text!important;-webkit-user-select:text!important;}
+@media print{html,body,*{display:none!important;visibility:hidden!important;}}
+body{margin:0;padding:0;background-color:var(--color-bg);color:var(--color-text);font-family:'Montserrat',sans-serif;font-size:16px;position:fixed;top:0;left:0;right:0;bottom:0;height:100dvh;width:100%;overflow:hidden;display:flex;flex-direction:column;}
+#forensic-watermark{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none!important;z-index:180;display:none;}
+#drm-curtain{position:fixed;top:0;left:0;width:100vw;height:100vh;background:#000!important;color:#fff;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:25px;}
+#drm-curtain i{width:80px;height:80px;margin-bottom:20px;color:var(--color-attention-high);}
+#drm-curtain h2{font-size:1.6rem;margin:0 0 10px 0;color:#ff4d4d;letter-spacing:1px;font-weight:800;}
+#drm-curtain p{max-width:480px;font-size:0.95rem;color:#d1d5db;margin:0 0 25px 0;line-height:1.5;}
+body.drm-blackout #student-task-card,body.drm-blackout #pdf-container,body.drm-blackout .task-canvas-wrapper,body.drm-blackout #task-modal,body.drm-blackout #ui-layer,body.drm-blackout #student-share-panel{filter:blur(50px) brightness(0)!important;visibility:hidden!important;opacity:0!important;}
+#student-share-panel{position:fixed;background:#fff;border:2px solid var(--color-attention-med);box-shadow:0 4px 18px rgba(0,0,0,0.15);z-index:215;display:flex;flex-direction:column;padding:8px 10px;box-sizing:border-box;}
+.share-panel-header{display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:4px;}
+.share-panel-title{font-size:0.72rem;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:0.3px;}
+.share-panel-body{display:flex;align-items:center;width:100%;flex:1;gap:8px;}
+#student-qr-container{background:#fff;padding:3px;border:1.5px solid var(--color-attention-med);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+#student-qr-container img,#student-qr-container canvas{max-width:100%;max-height:100%;display:block;}
+.share-panel-info{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:3px;}
+@media (max-width:767px){
+#student-share-panel{top:0;left:0;width:100%;height:32vh;min-height:160px;max-height:220px;border-radius:0 0 16px 16px;border-top:none;}
+#student-qr-container{width:95px;height:95px;}
+body.student-connected #ui-layer{top:32vh;height:68vh;padding:8px;}
+body.student-connected #pdf-container{margin-top:32vh;height:calc(100dvh - 32vh - var(--toolbar-size));}
+}
+@media (min-width:768px){
+#student-share-panel{top:14px;left:14px;width:220px;height:auto;border-radius:14px;}
+.share-panel-body{flex-direction:column;gap:6px;}
+#student-qr-container{width:115px;height:115px;}
+body.student-connected #ui-layer{padding-left:240px;}
+}
+body.fullscreen-mode #student-share-panel{display:none!important;}
+#ui-layer{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(244,244,244,1);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;}
+.card{background:var(--color-card);color:var(--color-text);padding:1rem;border-radius:1.2rem;text-align:center;width:100%;max-width:440px;height:auto;max-height:96%;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;box-shadow:var(--shadow);border:2px solid var(--color-border);gap:8px;transition:all 0.3s ease;}
+.hidden{display:none!important;}
+h3{margin:0;color:var(--color-text);font-weight:700;font-size:1.15rem;flex-shrink:0;}
+p.card-desc{margin:0;font-size:0.8rem;color:#555;}
+#role-menu{display:flex;flex-direction:column;gap:15px;width:100%;max-width:500px;height:100%;padding:10px 0;justify-content:center;}
+.role-btn{flex:1;max-height:40vh;border:none;border-radius:1.2rem;font-family:'Montserrat',sans-serif;font-size:clamp(1.4rem,4vw,1.8rem);font-weight:800;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;box-shadow:0 6px 15px rgba(0,0,0,0.2);transition:transform 0.15s,box-shadow 0.15s;text-transform:uppercase;}
+.role-btn:active{transform:scale(0.97);}
+.role-listener{background-color:var(--color-attention-high);border:2px solid var(--color-attention-high);}
+.role-speaker{background-color:var(--color-attention-med);border:2px solid var(--color-attention-med);}
+.action-bar{display:flex;width:100%;gap:10px;margin-top:6px;flex-shrink:0;}
+button.btn-primary{background:var(--color-attention-high);color:#fff;border:none;padding:0.65rem;font-size:1.05rem;font-family:'Montserrat',sans-serif;font-weight:700;border-radius:0.8rem;cursor:pointer;flex:2;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 10px rgba(184,0,0,0.3);text-transform:uppercase;transition:background-color 0.2s,transform 0.1s;}
+button.btn-primary:active{transform:scale(0.98);}
+button.btn-primary:disabled{opacity:0.5;cursor:not-allowed;box-shadow:none;}
+button.btn-secondary{background:#fff;color:var(--color-attention-med);border:2px solid var(--color-attention-med);padding:0.6rem;font-size:1rem;font-weight:600;border-radius:0.8rem;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif;transition:background-color 0.2s;}
+button.btn-secondary:active{background:#f0f8ff;}
+.icon-btn-group{display:flex;gap:8px;margin-top:4px;}
+.icon-btn{background:#f0f0f0;border:1px solid #ddd;border-radius:8px;padding:6px 12px;color:#555;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:0.8rem;font-weight:600;transition:all 0.2s;}
+.icon-btn:active{transform:scale(0.95);background:#e0e0e0;}
+.icon-btn i{width:16px;height:16px;}
+.btn-success{background:#e8f5e9;color:var(--color-success);border-color:var(--color-success);}
+.btn-approve{background:#e8f5e9;color:var(--color-success);border-color:var(--color-success);font-weight:700;}
+.btn-danger-action{background:#fff5f5!important;color:var(--color-error)!important;border-color:#fca5a5!important;}
+.btn-danger-action:hover{background:#fee2e2!important;color:#991b1b!important;}
+input[type="text"],input[type="password"],input[type="tel"],select,textarea{padding:0.55rem;width:100%;background:#fff;border:2px solid var(--color-attention-med);color:#111;border-radius:0.8rem;outline:none;font-size:0.9rem;text-align:left;font-family:'Montserrat',sans-serif;font-weight:600;flex-shrink:0;transition:border-color 0.3s,background-color 0.3s;}
+textarea{resize:vertical;min-height:70px;font-weight:500;font-size:0.8rem;line-height:1.35;}
+textarea::placeholder{color:#999;font-style:italic;}
+select{cursor:pointer;background:#fff;}
+input.input-success{border-color:var(--color-success)!important;background-color:#e8f5e9!important;color:var(--color-success)!important;}
+input.input-error{border-color:var(--color-error)!important;background-color:#ffebee!important;color:var(--color-error)!important;}
+.speaker-dashboard{display:flex;flex-direction:column;gap:12px;width:100%;height:100%;}
+.matrix-wrapper{display:flex;flex-direction:column;width:100%;flex:1;min-height:0;border:1px solid var(--color-border);border-radius:12px;background:#fdfdfd;padding:10px;}
+.matrix-toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #eee;}
+.matrix-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;overflow-y:auto;padding-right:6px;flex:1;min-height:160px;}
+.matrix-grid::-webkit-scrollbar{width:6px;}
+.matrix-grid::-webkit-scrollbar-thumb{background:#ccc;border-radius:4px;}
+.student-card{background:#fff;border:2px solid #e2e8f0;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;text-align:left;transition:all 0.2s ease;box-shadow:0 2px 6px rgba(0,0,0,0.04);position:relative;}
+.student-card:hover{box-shadow:0 4px 12px rgba(0,0,0,0.08);border-color:#cbd5e1;}
+.student-card.active-task{border-color:var(--color-success);background:#fcfdfc;box-shadow:0 0 0 1px var(--color-success),0 3px 10px rgba(46,125,50,0.15);}
+.student-card.online{border-left:5px solid var(--color-success);}
+.student-card-header{display:flex;align-items:center;gap:6px;width:100%;}
+.student-name-input{flex:1;font-weight:700;font-size:0.88rem;color:#1e293b;border:1px solid transparent;background:#f8fafc;border-radius:6px;padding:5px 8px;outline:none;transition:all 0.2s;font-family:inherit;}
+.student-name-input:hover{border-color:#cbd5e1;background:#fff;}
+.student-name-input:focus{border-color:var(--color-attention-med);background:#fff;box-shadow:0 0 0 2px rgba(11,83,148,0.15);}
+.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.status-dot.online{background-color:var(--color-success);box-shadow:0 0 6px rgba(46,125,50,0.6);}
+.status-dot.offline{background-color:#cbd5e1;}
+.btn-card-icon{background:none;border:none;cursor:pointer;padding:4px;color:#94a3b8;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.btn-card-icon:hover{background:#fee2e2;color:var(--color-error);}
+.student-card-task{font-size:0.82rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px;min-height:60px;max-height:100px;overflow-y:auto;font-family:inherit;font-weight:500;resize:vertical;width:100%;line-height:1.35;transition:border-color 0.2s;}
+.student-card-task:focus{border-color:var(--color-attention-med);background:#fff;outline:none;}
+.student-card-footer{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:auto;padding-top:4px;}
+.btn-matrix-toggle{border:none;padding:6px 12px;border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;text-transform:uppercase;transition:all 0.2s;letter-spacing:0.3px;}
+.btn-matrix-activate{background:var(--color-attention-med);color:#fff;box-shadow:0 2px 5px rgba(11,83,148,0.25);}
+.btn-matrix-activate:hover{background:#083c6c;transform:translateY(-1px);}
+.btn-matrix-deactivate{background:#fee2e2;color:var(--color-error);border:1px solid #fca5a5;}
+.btn-matrix-deactivate:hover{background:#fecaca;color:#991b1b;}
+.btn-add-card{background:var(--color-attention-med);color:#fff;border:none;font-weight:700;border-radius:8px;padding:6px 12px;font-size:0.8rem;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 6px rgba(11,83,148,0.2);}
+.btn-add-card:hover{background:#083c6c;transform:translateY(-1px);}
+.btn-add-card:active{transform:scale(0.97);}
+.task-inactive{opacity:0.5;filter:grayscale(1);}
+.task-canvas-wrapper{width:100%;background:#fff;border:2px solid #cbd5e1;border-radius:10px;overflow:hidden;display:flex;justify-content:center;align-items:center;box-shadow:inset 0 2px 4px rgba(0,0,0,0.03);}
+.task-canvas-wrapper canvas{display:block;width:100%;pointer-events:none;}
+@media (min-width:900px){
+#ui-layer{padding:20px;}
+#role-menu{flex-direction:row;max-width:760px;max-height:320px;gap:24px;}
+.role-btn{height:100%;max-height:100%;padding:2.5rem 1.5rem;font-size:1.6rem;}
+#speaker-menu.card{max-width:1400px;width:96vw;height:92vh;max-height:92vh;padding:1.2rem;overflow:hidden;}
+.speaker-dashboard{display:grid;grid-template-columns:330px 1fr;gap:16px;height:calc(100% - 40px);overflow:hidden;text-align:left;}
+.speaker-left-col{display:flex;flex-direction:column;gap:6px;height:100%;overflow-y:auto;padding-right:4px;}
+.speaker-right-col{display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden;}
+#listener-menu.card,#student-identity-menu.card,#loading-menu.card,#student-task-card.card{max-width:520px;padding:1.5rem;}
+}
+@media (hover:hover) and (pointer:fine){
+.role-btn:hover{transform:translateY(-4px);box-shadow:0 10px 25px rgba(0,0,0,0.25);}
+button.btn-primary:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-1px);}
+button.btn-secondary:hover{background:#f0f8ff;}
+.icon-btn:hover{background:#e4e4e4;}
+.btn-approve:hover{background:#c8e6c9!important;}
+}
+#lock-ui-wrapper{display:flex;flex-direction:column;width:100%;align-items:center;margin:5px 0;position:relative;}
+#ghost-input{position:absolute;opacity:0;top:0;left:0;width:100%;height:100%;z-index:10;pointer-events:none;}
+#lock-container{display:flex;justify-content:center;align-items:center;gap:4px;width:100%;user-select:none;flex-shrink:0;perspective:500px;transition:box-shadow 0.3s;border-radius:10px;padding:4px;}
+#lock-container.focused{box-shadow:0 0 0 2px var(--color-attention-med);background-color:rgba(11,83,148,0.05);}
+.lock-group{display:flex;gap:2px;}
+.lock-spacer{width:8px;}
+.lock-roller{width:34px;height:48px;background:#fff;border:2px solid #ccc;border-radius:6px;font-size:1.6rem;font-weight:800;color:var(--color-text);display:flex;align-items:center;justify-content:center;cursor:grab;position:relative;overflow:hidden;box-shadow:inset 0 0 10px rgba(0,0,0,0.1);touch-action:none;transition:border-color 0.2s;}
+.lock-roller::before{content:'';position:absolute;top:0;left:0;right:0;height:10px;background:linear-gradient(to bottom,rgba(0,0,0,0.2),transparent);pointer-events:none;}
+.lock-roller::after{content:'';position:absolute;bottom:0;left:0;right:0;height:10px;background:linear-gradient(to top,rgba(0,0,0,0.2),transparent);pointer-events:none;}
+.lock-roller:active{cursor:grabbing;border-color:var(--color-attention-med);}
+.lock-roller span{z-index:1;pointer-events:none;}
+.lock-arrow-row{display:flex;justify-content:center;gap:4px;width:100%;color:#999;margin:2px 0;}
+.lock-arrow-group{display:flex;gap:2px;}
+.lock-arrow-spacer{width:8px;}
+.arrow-icon{width:34px;height:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.arrow-icon:active{transform:scale(0.9);color:var(--color-attention-med);}
+.arrow-icon svg{width:16px;height:16px;stroke-width:3px;}
+#reader{width:100%;max-width:280px;margin:0 auto;background:#000;border:2px solid var(--color-attention-med);border-radius:10px;overflow:hidden;min-height:200px;}
+#reader video{width:100%;height:100%;object-fit:cover;display:block;}
+#reader__dashboard_section_csr button{background-color:var(--color-attention-high)!important;color:#fff!important;border:none!important;padding:8px 16px!important;border-radius:8px!important;font-family:'Montserrat',sans-serif!important;font-weight:700!important;margin:10px auto!important;display:block!important;cursor:pointer;}
+#html5-qrcode-anchor-scan-type-change{display:none!important;}
+#qr-container{background:#fff;padding:4px;display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--color-attention-med);border-radius:10px;flex-shrink:1;max-height:15vh;aspect-ratio:1/1;}
+#qr-container img{max-width:100%;max-height:100%;object-fit:contain;}
+#pdf-container{flex:1;width:100%;min-height:0;min-width:0;position:relative;background:#222;display:flex;justify-content:center;align-items:center;padding:0;overflow:hidden;}
+body.fullscreen-mode #toolbar{display:none!important;}
+body.fullscreen-mode #pdf-container{width:100%;height:100%;background:#000;}
+body.fullscreen-mode #fs-controls{display:block!important;}
+.canvas-wrapper{position:relative;box-shadow:0 4px 15px rgba(0,0,0,0.5);background:#fff;max-width:100%;max-height:100%;display:flex;}
+canvas#the-canvas{display:block;max-width:100%;max-height:100%;object-fit:contain;pointer-events:none;}
+canvas#draw-canvas{position:absolute;top:0;left:0;width:100%;height:100%;touch-action:none;cursor:crosshair;pointer-events:none;}
+#hand-overlay{position:absolute;top:10px;left:10px;background:rgba(255,255,255,0.95);border:2px solid var(--color-hand);border-radius:20px;padding:8px 16px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:50;font-weight:700;color:#000;}
+#offline-indicator{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(100,100,100,0.95);color:#fff;border-radius:20px;padding:8px 16px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:250;font-weight:600;font-size:0.9rem;}
+.bounce{animation:bounce 0.5s infinite alternate;}
+@keyframes bounce{from{transform:translateY(0);}to{transform:translateY(-5px);}}
+.spin{animation:spin 1s linear infinite;}
+@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+.touch-zone{position:fixed;top:0;bottom:80px;width:15%;z-index:10;}
+#zone-prev{left:0;}
+#zone-next{right:0;}
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:300;justify-content:center;align-items:center;flex-direction:column;padding:15px;}
+.modal-content{background:#fff;padding:1.5rem;border-radius:1.5rem;box-shadow:var(--shadow);border:2px solid var(--color-attention-med);display:flex;flex-direction:column;align-items:center;text-align:center;max-width:92%;width:440px;}
+#toolbar{width:100%;height:auto;min-height:var(--toolbar-size);flex:0 0 auto;padding-bottom:env(safe-area-inset-bottom);background-color:var(--color-attention-med);display:flex;justify-content:center;align-items:center;gap:2px;box-shadow:0 -4px 15px rgba(0,0,0,0.2);z-index:50;position:relative;}
+@media (orientation:landscape){
+body{flex-direction:row;}
+#toolbar{width:var(--toolbar-size);height:100%;flex:0 0 var(--toolbar-size);flex-direction:column;box-shadow:-4px 0 15px rgba(0,0,0,0.2);padding-bottom:0;padding-right:env(safe-area-inset-right);min-height:0;}
+#page-info{transform:rotate(var(--landscape-rotation));margin:5px 0;}
+.tool-btn{width:100%;height:auto;min-height:50px;}
+}
+#page-info{color:#fff;font-size:1rem;font-weight:600;min-width:45px;text-align:center;white-space:nowrap;margin:0 2px;transition:transform 0.3s ease;transform:rotate(var(--landscape-rotation));}
+.tool-btn{background:none;border:none;color:#fff;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;flex-shrink:1;min-width:44px;height:100%;position:relative;}
+.tool-btn:active .btn-inner{background-color:rgba(255,255,255,0.2);border-radius:8px;}
+.btn-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;transition:transform 0.3s ease;width:100%;height:100%;position:relative;transform:rotate(var(--landscape-rotation));}
+.btn-inner span{font-size:0.65rem;margin-top:3px;font-weight:500;white-space:nowrap;}
+.tool-btn.danger{color:#ffcccc;}
+.hand-active .btn-inner{color:var(--color-hand)!important;background:rgba(255,255,255,0.1);border-radius:8px;}
+.hand-active i{fill:var(--color-hand);}
+.hand-timer-svg{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%) rotate(-90deg);width:36px;height:36px;pointer-events:none;display:none;z-index:0;transition:top 0.2s;}
+#fs-hand .hand-timer-svg{top:50%;width:60px;height:60px;}
+.hand-active .hand-timer-svg,.fs-btn-active .hand-timer-svg{display:block;}
+#btn-hand.hand-active span{display:none;}
+#btn-hand.hand-active .hand-timer-svg{top:50%;}
+.hand-timer-path{fill:none;stroke:var(--color-hand);stroke-width:3;stroke-dasharray:100,100;stroke-dashoffset:0;}
+.hand-active .hand-timer-path,.fs-btn-active .hand-timer-path{animation:timeCircle 10s linear forwards;}
+@keyframes timeCircle{0%{stroke-dashoffset:0;}100%{stroke-dashoffset:100;}}
+#fs-controls{display:none;position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:150;}
+#fs-exit,#fs-hand,#fs-page-info{pointer-events:auto;transition:transform 0.3s ease;}
+#fs-exit{position:absolute;top:20px;right:20px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;transform:rotate(var(--landscape-rotation));}
+#fs-page-info{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.6);color:#fff;padding:8px 16px;border-radius:20px;font-weight:700;font-size:0.9rem;transform:rotate(var(--landscape-rotation));origin:center;}
+#fs-hand{position:absolute;bottom:30px;right:20px;background:#fff;color:#aaa;border:2px solid #ccc;border-radius:50%;width:64px;height:64px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.3);transform:rotate(var(--landscape-rotation));}
+#fs-hand:active{transform:scale(0.95);}
+.fs-btn-active{background-color:var(--color-hand)!important;color:#fff!important;border:none!important;}
+.id-display{font-size:1.4rem;font-weight:800;color:var(--color-attention-med);background:#f0f8ff;padding:4px 8px;border-radius:10px;border:2px dashed var(--color-attention-med);letter-spacing:2px;user-select:text;flex-shrink:0;}
+.id-label{font-size:0.7rem;text-transform:uppercase;color:#666;font-weight:700;}
+.badge{padding:2px 6px;border-radius:10px;font-size:0.7rem;font-weight:700;}
+.badge-ok{background:#e8f5e9;color:var(--color-success);}
+.badge-warn{background:#ffebee;color:var(--color-error);}
+.badge-wait{background:#fff3e0;color:#e65100;}
 </style>
 </head>
 <body>
-<!-- DRM FORENSIC WATERMARK CANVAS -->
 <canvas id="forensic-watermark"></canvas>
-<!-- DRM BLACKOUT CURTAIN -->
 <div id="drm-curtain" class="hidden">
     <i data-lucide="shield-alert"></i>
     <h2>DRM ЗАХИСТ ВМІСТУ АКТИВОВАНО</h2>
@@ -828,7 +214,6 @@
         ПОВЕРНУТИСЯ ДО ТЕСТУ
     </button>
 </div>
-<!-- PRESERVED STUDENT VIRAL SHARING PANEL (1/3 SCREEN MOBILE, TOP-LEFT DESKTOP) -->
 <div id="student-share-panel" class="hidden">
     <div class="share-panel-header">
         <span class="share-panel-title">
@@ -971,13 +356,12 @@
     <div id="student-task-card" class="card hidden" style="border-color: var(--color-attention-med);">
         <div style="display:flex; justify-content: space-between; align-items:center; width: 100%;">
             <div style="display: flex; gap: 6px; align-items: center;">
-                <span class="badge badge-ok">Завдання активовано</span>
+                <span id="st-status-badge" class="badge badge-ok">Закріплено</span>
                 <span id="st-timer-badge" class="badge badge-warn hidden">⏳ 20с</span>
             </div>
             <span id="st-badge-name" style="font-weight: 700; font-size: 0.85rem; color: var(--color-attention-med);"></span>
         </div>
         <h3 style="margin-top: 6px;">Ваше персональне завдання</h3>
-        <!-- Anti-OCR Secure Canvas Display -->
         <div class="task-canvas-wrapper" style="min-height: 120px;">
             <canvas id="st-task-canvas" width="400" height="130"></canvas>
         </div>
@@ -999,7 +383,6 @@
             <span class="badge badge-ok">Викладач</span>
         </div>
         <div class="speaker-dashboard">
-            <!-- LEFT COLUMN -->
             <div class="speaker-left-col">
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%;">
                     <div id="qr-container"></div>
@@ -1010,7 +393,6 @@
                         <button class="icon-btn" onclick="shareId()"><i data-lucide="share-2"></i> Надіслати</button>
                     </div>
                 </div>
-                <!-- 20-SEC TIMER SWITCHER -->
                 <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 5px 8px; border-radius: 8px; margin-top: 2px;">
                     <span style="font-size: 0.73rem; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
                         <i data-lucide="timer" style="width:14px;height:14px;color:var(--color-attention-med);"></i>
@@ -1022,7 +404,6 @@
                         <span id="timer-knob" style="position: absolute; height: 12px; width: 12px; left: 20px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%;"></span>
                     </label>
                 </div>
-                <!-- MULTI-ACTIVATION TOGGLE SWITCHER (DEFAULT: SINGLE ACTIVE) -->
                 <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 5px 8px; border-radius: 8px;">
                     <span style="font-size: 0.73rem; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
                         <i data-lucide="layers" style="width:14px;height:14px;color:var(--color-attention-med);"></i>
@@ -1034,7 +415,6 @@
                         <span id="multi-knob" style="position: absolute; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%;"></span>
                     </label>
                 </div>
-                <!-- PROXY SERVER TOGGLE SWITCHER (DEFAULT: ON) -->
                 <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 5px 8px; border-radius: 8px;">
                     <span style="font-size: 0.73rem; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
                         <i data-lucide="globe" style="width:14px;height:14px;color:var(--color-attention-med);"></i>
@@ -1060,7 +440,6 @@
                     </button>
                 </div>
             </div>
-            <!-- RIGHT COLUMN (WYSIWYG MATRIX) -->
             <div class="speaker-right-col">
                 <div class="matrix-wrapper">
                     <div class="matrix-toolbar">
@@ -1079,15 +458,12 @@
                             </button>
                             <button class="icon-btn" onclick="activateAllTasks(true)"><i data-lucide="play"></i> Всім</button>
                             <button class="icon-btn" onclick="activateAllTasks(false)"><i data-lucide="square"></i> Зупинити всі</button>
-                            <!-- DELETE ALL CARDS BUTTON -->
                             <button class="icon-btn btn-danger-action" onclick="deleteAllCards()" title="Видалити всіх студентів та очистити матрицю">
                                 <i data-lucide="trash-2"></i> Видалити всіх
                             </button>
                         </div>
                     </div>
-                    <div class="matrix-grid" id="teacher-matrix-grid">
-                        <!-- Dynamic Student Blocks Rendered Here -->
-                    </div>
+                    <div class="matrix-grid" id="teacher-matrix-grid"></div>
                 </div>
             </div>
         </div>
@@ -1100,7 +476,6 @@
         </button>
     </div>
 </div>
-<!-- BULK IMPORT MODAL -->
 <div id="import-modal" class="modal-overlay">
     <div class="modal-content" style="max-width: 520px; text-align: left;">
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
@@ -1135,7 +510,7 @@
                 <h3 style="color: var(--color-attention-med);">Моє завдання</h3>
                 <span id="modal-timer-badge" class="badge badge-warn hidden">⏳ 20с</span>
             </div>
-            <span class="badge badge-ok">Активовано</span>
+            <span id="modal-status-badge" class="badge badge-ok">Активовано</span>
         </div>
         <div class="task-canvas-wrapper" style="min-height: 120px; max-height: 250px; overflow-y: auto;">
             <canvas id="modal-task-canvas" width="400" height="140"></canvas>
@@ -1249,7 +624,7 @@
     const drawCtx = drawCanvas.getContext('2d');
     const container = document.getElementById('pdf-container');
     let peer = null;
-    let connections = []; // Stores connection objects: { id, isProxy, conn, handRaised, lastPong, ready }
+    let connections = [];
     let isLeader = false;
     let examStarted = false;
     let activeSourceUrl = null;
@@ -1261,34 +636,35 @@
     let isDrawing = false;
     let lastX = 0, lastY = 0;
     let pageMarks = {};
-    // WYSIWYG Student Cards State & Timers
-    let studentCards = []; // Array of { id, name, task, active }
+    let studentCards = [];
     let registeredStudents = [];
-    let studentTasks = {}; // name -> task string
-    let activeStudentTasks = {}; // name -> boolean
+    let studentTasks = {};
+    let activeStudentTasks = {};
     let studentsApproved = false;
-    let studentClaims = {}; // peerId -> studentName
-    let studentViolations = {}; // peerId -> count
+    let studentClaims = {};
+    let studentViolations = {};
     let myStudentName = "";
     let myIndividualTask = "";
     let isMyTaskActive = false;
-    // AUTO-TIMER 20s, MULTI-ACTIVATION & PROXY SWITCHERS
     let autoTimerEnabled = true;
     let allowMultipleActive = false; 
-    let useProxy = true; // DEFAULT STATE: USE PROXY
-    let cardTimers = {}; // cardId -> { remaining: number, interval: id }
+    let useProxy = true;
+    let cardTimers = {};
     let studentCountdownInterval = null;
     const lockDigits = [0,0,0,0,0,0,0,0,0];
     let html5QrcodeScanner = null;
     let watermarkInterval = null;
-    // PROXY CLIENT STATE & E2EE CRYPTO KEY
     let proxyPollTimer = null;
     let proxyLastMsgId = 0;
-    let myProxyClientId = null;
+    let myProxyClientId = sessionStorage.getItem('examsync_peer_id') || ('st_' + Math.floor(Math.random()*899999999 + 100000000));
+    sessionStorage.setItem('examsync_peer_id', myProxyClientId);
     let e2eeCryptoKey = null;
+    let proxySendQueue = [];
+    let isSendingProxy = false;
+    let isPollingProxy = false;
+    let claimRetryTimer = null;
     lucide.createIcons();
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    // --- ON-DEVICE E2EE ENCRYPTION ENGINE (AES-256-GCM + PBKDF2 SHA-256) ---
     async function deriveE2EEKey(sessionCode) {
         try {
             const enc = new TextEncoder();
@@ -1303,7 +679,7 @@
                 {
                     name: "PBKDF2",
                     salt: enc.encode("science_knu_ua_salt_e2ee"),
-                    iterations: 100000,
+                    iterations: 20000,
                     hash: "SHA-256"
                 },
                 keyMaterial,
@@ -1312,7 +688,6 @@
                 ["encrypt", "decrypt"]
             );
         } catch(e) {
-            console.error("Crypto Key Derivation error:", e);
             return null;
         }
     }
@@ -1336,7 +711,6 @@
             }
             return "ENC:" + btoa(binary);
         } catch (e) {
-            console.error("Encryption error:", e);
             return JSON.stringify(obj);
         }
     }
@@ -1364,17 +738,13 @@
             const dec = new TextDecoder();
             return JSON.parse(dec.decode(decryptedBuffer));
         } catch (e) {
-            console.error("Decryption error:", e);
             return null;
         }
     }
-    // --- PROXY SERVER DISPATCHER & HTTP POLLING BRIDGE ---
     async function postProxy(action, params = {}) {
         const fd = new FormData();
         fd.append('action', action);
-        for (const k in params) {
-            fd.append(k, params[k]);
-        }
+        for (const k in params) fd.append(k, params[k]);
         try {
             const resp = await fetch(PROXY_SERVER_URL, {
                 method: 'POST',
@@ -1387,41 +757,70 @@
             return null;
         }
     }
+    function sendViaProxy(sessionCode, senderId, recipientId, obj) {
+        return new Promise((resolve) => {
+            proxySendQueue.push({
+                session: sessionCode,
+                sender: senderId,
+                recipient: recipientId || 'all',
+                obj: obj,
+                resolve: resolve
+            });
+            processProxySendQueue();
+        });
+    }
+    async function processProxySendQueue() {
+        if (isSendingProxy || proxySendQueue.length === 0) return;
+        isSendingProxy = true;
+        const item = proxySendQueue.shift();
+        try {
+            const encrypted = await encryptPayload(item.obj);
+            const res = await postProxy('send', {
+                session: item.session,
+                sender: item.sender,
+                recipient: item.recipient,
+                payload: encrypted
+            });
+            if (item.resolve) item.resolve(res);
+        } catch(e) {
+            if (item.resolve) item.resolve(null);
+        } finally {
+            isSendingProxy = false;
+            if (proxySendQueue.length > 0) setTimeout(processProxySendQueue, 50);
+        }
+    }
     function startProxyPolling(sessionCode, myPeerId, onMessageCallback) {
         stopProxyPolling();
         proxyLastMsgId = 0;
         proxyPollTimer = setInterval(async () => {
-            if (!useProxy) return;
-            const res = await postProxy('poll', {
-                session: sessionCode,
-                peer_id: myPeerId,
-                last_id: proxyLastMsgId
-            });
-            if (res && res.status === 'ok' && Array.isArray(res.messages)) {
-                for (const msg of res.messages) {
-                    if (msg.id > proxyLastMsgId) proxyLastMsgId = msg.id;
-                    if (msg.sender !== myPeerId) {
-                        const decrypted = await decryptPayload(msg.payload);
-                        if (decrypted) onMessageCallback(decrypted, msg.sender);
+            if (!useProxy || isPollingProxy) return;
+            isPollingProxy = true;
+            try {
+                const res = await postProxy('poll', {
+                    session: sessionCode,
+                    peer_id: myPeerId,
+                    last_id: proxyLastMsgId
+                });
+                if (res && res.status === 'ok' && Array.isArray(res.messages)) {
+                    for (const msg of res.messages) {
+                        if (msg.id > proxyLastMsgId) proxyLastMsgId = msg.id;
+                        if (msg.sender !== myPeerId) {
+                            const decrypted = await decryptPayload(msg.payload);
+                            if (decrypted) onMessageCallback(decrypted, msg.sender);
+                        }
                     }
                 }
+            } catch(e) {
+            } finally {
+                isPollingProxy = false;
             }
-        }, 900);
+        }, 800);
     }
     function stopProxyPolling() {
         if (proxyPollTimer) {
             clearInterval(proxyPollTimer);
             proxyPollTimer = null;
         }
-    }
-    async function sendViaProxy(sessionCode, senderId, recipientId, obj) {
-        const encrypted = await encryptPayload(obj);
-        return await postProxy('send', {
-            session: sessionCode,
-            sender: senderId,
-            recipient: recipientId || 'all',
-            payload: encrypted
-        });
     }
     window.onload = () => {
         document.documentElement.style.setProperty('--landscape-rotation', LANDSCAPE_ROTATION_DEG + 'deg');
@@ -1434,7 +833,7 @@
                         id: item.id || ('st_' + Date.now() + '_' + idx),
                         name: item.name || '',
                         task: item.task || '',
-                        active: false
+                        active: !!item.active
                     }));
                     syncCardStateToGlobals();
                 }
@@ -1460,7 +859,6 @@
     function isStudentActive() {
         return !isLeader && (currentHostId !== null || myStudentName !== "" || isMyTaskActive || examStarted);
     }
-    // --- DRM & ANTI-CHEAT HARDENING (NETFLIX-STYLE BLACKOUT & FORENSICS) ---
     function blockScreenRecordingAPIs() {
         if (navigator.mediaDevices) {
             navigator.mediaDevices.getDisplayMedia = function() {
@@ -1489,10 +887,7 @@
         }
     }
     function initDrmGuards() {
-        document.addEventListener('contextmenu', e => {
-            e.preventDefault();
-            return false;
-        });
+        document.addEventListener('contextmenu', e => { e.preventDefault(); return false; });
         document.addEventListener('copy', e => {
             if (!isLeader) {
                 e.preventDefault();
@@ -1501,20 +896,11 @@
                 triggerDrmCurtain("Копіювання матеріалів заборонено правилами іспиту!");
             }
         });
-        document.addEventListener('cut', e => {
-            if (!isLeader) {
-                e.preventDefault();
-                scrubClipboard();
-            }
-        });
-        document.addEventListener('paste', e => {
-            if (!isLeader && isStudentActive()) e.preventDefault();
-        });
+        document.addEventListener('cut', e => { if (!isLeader) { e.preventDefault(); scrubClipboard(); } });
+        document.addEventListener('paste', e => { if (!isLeader && isStudentActive()) e.preventDefault(); });
         document.addEventListener('dragstart', e => e.preventDefault());
         document.addEventListener('drop', e => e.preventDefault());
-        document.addEventListener('selectstart', e => {
-            if (!isLeader && isStudentActive()) e.preventDefault();
-        });
+        document.addEventListener('selectstart', e => { if (!isLeader && isStudentActive()) e.preventDefault(); });
         document.addEventListener('selectionchange', () => {
             if (!isLeader && isStudentActive()) {
                 const sel = window.getSelection();
@@ -1560,18 +946,14 @@
                 reportViolation("Вкладку приховано (VisibilityChange)");
             }
         });
-        window.addEventListener('pagehide', () => {
-            if (isStudentActive()) scrubClipboard();
-        });
+        window.addEventListener('pagehide', () => { if (isStudentActive()) scrubClipboard(); });
         window.addEventListener('beforeprint', (e) => {
             e.preventDefault();
             blackoutSensitiveContent();
             triggerDrmCurtain("Друк матеріалів іспиту суворо заборонено!");
             reportViolation("Спроба друку");
         });
-        setInterval(() => {
-            if (isStudentActive()) scrubClipboard();
-        }, 3000);
+        setInterval(() => { if (isStudentActive()) scrubClipboard(); }, 3000);
     }
     function scrubClipboard() {
         try {
@@ -1590,13 +972,9 @@
     function dismissDrmCurtain() {
         document.getElementById('drm-curtain').classList.add('hidden');
         document.body.classList.remove('drm-blackout');
-        if (isMyTaskActive) {
-            renderTaskToSecureCanvas('st-task-canvas', myIndividualTask, myStudentName, true);
-            renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, true);
-        }
-        if (pdfDoc && examStarted) {
-            renderPage(pageNum);
-        }
+        renderTaskToSecureCanvas('st-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
+        renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
+        if (pdfDoc && examStarted) renderPage(pageNum);
     }
     async function reportViolation(reason) {
         const payload = {
@@ -1612,7 +990,6 @@
             hostConnection.send(enc);
         }
     }
-    // --- FORENSIC WATERMARK CANVAS ENGINE (ANTI-SMARTPHONE CAMERA CAPTURE) ---
     function startForensicWatermarking() {
         const wmCanvas = document.getElementById('forensic-watermark');
         wmCanvas.style.display = 'block';
@@ -1650,7 +1027,6 @@
         watermarkInterval = setInterval(drawWatermark, 1000);
         window.addEventListener('resize', drawWatermark);
     }
-    // --- SECURE ANTI-OCR CANVAS TASK RENDERER ---
     function renderTaskToSecureCanvas(canvasId, text, studentName, isActive) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
@@ -1669,12 +1045,12 @@
             ctx.fillStyle = '#c62828';
             ctx.font = "700 13px 'Montserrat', sans-serif";
             ctx.textAlign = 'center';
-            ctx.fillText("ЗАВДАННЯ ДЕАКТИВОВАНО ВИКЛАДАЧЕМ", displayWidth / 2, 48);
+            ctx.fillText("ЗАВДАННЯ ОЧІКУЄ АКТИВАЦІЇ ВИКЛАДАЧЕМ", displayWidth / 2, 48);
             return;
         }
         const baseFontSize = 14;
         ctx.font = `600 ${baseFontSize}px 'Montserrat', sans-serif`;
-        const words = (text || "Очікування завдання...").split(/\s+/);
+        const words = (text || "Очікування тексту завдання...").split(/\s+/);
         const lines = [];
         let curLine = '';
         const maxTextWidth = displayWidth - 28;
@@ -1716,7 +1092,6 @@
             yPos += lineHeight;
         }
     }
-    // --- TEACHER AUTHENTICATION (BCRYPT) ---
     function promptTeacherAuth() {
         document.getElementById('teacher-pwd').value = "";
         document.getElementById('auth-err-msg').innerText = "";
@@ -1754,7 +1129,6 @@
             setTimeout(() => document.getElementById('teacher-pwd').classList.remove('input-error'), 1000);
         }
     }
-    // --- SWITCHERS LOGIC: TIMER, MULTI-ACTIVE & PROXY ---
     function toggleAutoTimer(enabled) {
         autoTimerEnabled = enabled;
         const knob = document.getElementById('timer-knob');
@@ -1780,15 +1154,13 @@
             let keptOne = false;
             studentCards.forEach(c => {
                 if (c.active) {
-                    if (!keptOne) {
-                        keptOne = true;
-                    } else {
-                        deactivateSingleCard(c);
-                    }
+                    if (!keptOne) keptOne = true;
+                    else deactivateSingleCard(c);
                 }
             });
             localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
             renderTeacherMatrix();
+            broadcastState();
         }
     }
     function toggleProxyMode(enabled) {
@@ -1832,11 +1204,13 @@
                     if (cardTimers[card.id].remaining <= 0) {
                         deactivateSingleCard(card);
                         renderTeacherMatrix();
+                        broadcastState();
                     }
                 }, 1000)
             };
         }
         sendTaskToStudent(stName, autoTimerEnabled ? 20 : null);
+        broadcastState();
     }
     function deactivateSingleCard(card) {
         card.active = false;
@@ -1844,8 +1218,8 @@
         activeStudentTasks[stName] = false;
         clearCardTimer(card.id);
         sendTaskToStudent(stName, null);
+        broadcastState();
     }
-    // --- WYSIWYG CARD & MATRIX LOGIC ---
     function syncCardStateToGlobals() {
         registeredStudents = studentCards.map(c => c.name.trim()).filter(n => n.length > 0);
         studentTasks = {};
@@ -1869,7 +1243,7 @@
             active: false
         });
         syncCardStateToGlobals();
-        broadcastStudentList();
+        broadcastState();
         renderTeacherMatrix();
         setTimeout(() => {
             const el = document.getElementById(`name-input-${newId}`);
@@ -1881,15 +1255,13 @@
         if (!card) return;
         clearCardTimer(id);
         const stName = card.name.trim();
-        if (card.active && stName) {
-            deactivateSingleCard(card);
-        }
+        if (card.active && stName) deactivateSingleCard(card);
         for (const peerId in studentClaims) {
             if (studentClaims[peerId] === stName) delete studentClaims[peerId];
         }
         studentCards = studentCards.filter(c => c.id !== id);
         syncCardStateToGlobals();
-        broadcastStudentList();
+        broadcastState();
         renderTeacherMatrix();
     }
     function deleteAllCards() {
@@ -1898,9 +1270,7 @@
         studentCards.forEach(c => {
             clearCardTimer(c.id);
             const stName = c.name.trim();
-            if (c.active && stName) {
-                sendTaskToStudent(stName, null);
-            }
+            if (c.active && stName) sendTaskToStudent(stName, null);
         });
         studentCards = [];
         studentClaims = {};
@@ -1908,7 +1278,7 @@
         activeStudentTasks = {};
         studentTasks = {};
         syncCardStateToGlobals();
-        broadcastStudentList();
+        broadcastState();
         renderTeacherMatrix();
         showNotification("Всі картки студентів видалено.", false);
     }
@@ -1923,7 +1293,7 @@
         }
         card.name = newName;
         syncCardStateToGlobals();
-        broadcastStudentList();
+        broadcastState();
         if (card.active && trimmedNew) sendTaskToStudent(trimmedNew, autoTimerEnabled ? 20 : null);
         updateMatrixCounts();
     }
@@ -1940,22 +1310,19 @@
             }
         }
         localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
+        broadcastState();
     }
     function toggleCardActivation(id) {
         const card = studentCards.find(c => c.id === id);
         if (!card) return;
         const stName = card.name.trim();
-        if (!stName) {
-            return showNotification("Введіть ПІБ студента перед активацією!", true);
-        }
+        if (!stName) return showNotification("Введіть ПІБ студента перед активацією!", true);
         if (card.active) {
             deactivateSingleCard(card);
         } else {
             if (!allowMultipleActive) {
                 studentCards.forEach(c => {
-                    if (c.id !== card.id && c.active) {
-                        deactivateSingleCard(c);
-                    }
+                    if (c.id !== card.id && c.active) deactivateSingleCard(c);
                 });
             }
             activateSingleCard(card);
@@ -1972,14 +1339,12 @@
         studentCards.forEach(c => {
             const stName = c.name.trim();
             if (!stName) return;
-            if (state) {
-                activateSingleCard(c);
-            } else {
-                deactivateSingleCard(c);
-            }
+            if (state) activateSingleCard(c);
+            else deactivateSingleCard(c);
         });
         localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
         renderTeacherMatrix();
+        broadcastState();
     }
     function openImportModal() {
         document.getElementById('import-modal-text').value = '';
@@ -2013,18 +1378,10 @@
             }
         });
         syncCardStateToGlobals();
-        broadcastStudentList();
+        broadcastState();
         renderTeacherMatrix();
         closeImportModal();
         showNotification(`Створено ${lines.length} карток студентів.`, false);
-    }
-    function broadcastStudentList() {
-        broadcast({
-            type: 'STUDENT_LIST_SYNC',
-            approved: studentsApproved,
-            students: registeredStudents,
-            claims: studentClaims
-        });
     }
     function updateMatrixCounts() {
         let activeCount = studentCards.filter(c => c.active).length;
@@ -2055,11 +1412,12 @@
             return;
         }
         let html = '';
+        const now = Date.now();
         studentCards.forEach(c => {
             const stName = c.name.trim();
             const peerId = stName ? Object.keys(studentClaims).find(k => studentClaims[k] === stName) : null;
-            const isOnline = peerId && connections.some(conn => conn.id === peerId);
-            const clientConn = isOnline ? connections.find(conn => conn.id === peerId) : null;
+            const clientConn = peerId ? connections.find(conn => conn.id === peerId) : null;
+            const isOnline = !!clientConn && (now - clientConn.lastPong < 10000);
             const handRaised = clientConn ? clientConn.handRaised : false;
             const violations = peerId ? (studentViolations[peerId] || 0) : 0;
             const isActive = !!c.active;
@@ -2074,7 +1432,7 @@
                     <input type="text" class="student-name-input" id="name-input-${c.id}" 
                            value="${escapedName}" 
                            placeholder="ПІБ студента..." 
-                           onchange="updateCardName('${c.id}', this.value)" 
+                           oninput="updateCardName('${c.id}', this.value)" 
                            onkeydown="if(event.key==='Enter') this.blur()">
                     <button class="btn-card-icon" onclick="deleteStudentCard('${c.id}')" title="Видалити картку">
                         <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
@@ -2088,7 +1446,7 @@
                         ${timerBadge}
                         ${violations > 0 ? `<span class="badge badge-warn" title="Підозр: ${violations}">⚠️ ${violations}</span>` : ''}
                         ${handRaised ? `<span style="color:#f59e0b; font-size: 0.9rem;" title="Піднято руку">✋</span>` : ''}
-                        ${peerId ? '<span class="badge badge-ok" style="font-size:0.65rem;" title="Студент вибрав це ім\'я">Закріплено</span>' : '<span class="badge badge-wait" style="font-size:0.65rem;">Вільний</span>'}
+                        ${peerId ? '<span class="badge badge-ok" style="font-size:0.65rem;" title="Студент закріплений">Закріплено</span>' : '<span class="badge badge-wait" style="font-size:0.65rem;">Вільний</span>'}
                     </div>
                     <button class="btn-matrix-toggle ${isActive ? 'btn-matrix-deactivate' : 'btn-matrix-activate'}" onclick="toggleCardActivation('${c.id}')">
                         ${isActive ? '<i data-lucide="square" style="width:12px;height:12px;"></i> Зупинити' : '<i data-lucide="play" style="width:12px;height:12px;"></i> Активувати'}
@@ -2112,28 +1470,26 @@
             duration: duration || null
         };
         const client = connections.find(c => c.id === peerId);
-        if (client) {
-            if (client.isProxy && useProxy) {
-                sendViaProxy(myIdRaw, 'host', peerId, payload);
-            } else if (client.conn && client.conn.open) {
-                const enc = await encryptPayload(payload);
-                client.conn.send(enc);
-            }
+        if (client && client.conn && client.conn.open) {
+            const enc = await encryptPayload(payload);
+            client.conn.send(enc);
+        }
+        if (useProxy && myIdRaw) {
+            sendViaProxy(myIdRaw, 'host', peerId, payload);
         }
     }
     function escapeHtml(str) {
         return (str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
     }
-    // --- STUDENT DROPDOWN & IDENTITY CLAIM ---
     function showWaitingForTeacherApproval() {
         document.getElementById('student-identity-menu').classList.add('hidden');
         document.getElementById('listener-menu').classList.add('hidden');
         document.getElementById('student-task-card').classList.add('hidden');
         document.getElementById('loading-menu').classList.remove('hidden');
         document.getElementById('loading-msg').innerHTML = 
-            'Очікування формування та затвердження завдань викладачем...<br>' +
+            'Очікування формування списку викладачем...<br>' +
             '<span style="font-size:0.8rem; font-weight:500; color:#666; margin-top:8px; display:block;">' +
-            'Викладач готує матрицю групи. Вибір вашого прізвища з\'явиться автоматично.' +
+            'Викладач готує матрицю групи. Список для вибору з\'явиться автоматично.' +
             '</span>';
     }
     function showStudentClaimMenu(students, claims) {
@@ -2147,7 +1503,7 @@
         students.forEach(name => {
             const opt = document.createElement('option');
             opt.value = name;
-            if (claimedNames.includes(name)) {
+            if (claimedNames.includes(name) && name !== myStudentName) {
                 opt.textContent = name + ' [ВЖЕ ОБРАНО]';
                 opt.disabled = true;
             } else {
@@ -2156,48 +1512,98 @@
             select.appendChild(opt);
         });
     }
-    async function confirmStudentIdentity() {
+    function confirmStudentIdentity(overrideName) {
         const select = document.getElementById('student-select');
-        const chosen = select.value;
-        if (!chosen) {
-            return showNotification("Будь ласка, оберіть своє прізвище зі списку!", true);
-        }
+        const chosen = overrideName || (select ? select.value : "");
+        if (!chosen) return showNotification("Будь ласка, оберіть своє прізвище зі списку!", true);
+        myStudentName = chosen;
+        sessionStorage.setItem('examsync_student_name', chosen);
         const claimMsg = {
             type: 'CLAIM_IDENTITY',
-            name: chosen
+            name: chosen,
+            clientId: myProxyClientId
         };
         if (useProxy && currentHostId) {
             sendViaProxy(currentHostId, myProxyClientId, 'host', claimMsg);
-        } else if (hostConnection && hostConnection.open) {
-            const enc = await encryptPayload(claimMsg);
-            hostConnection.send(enc);
-        } else {
-            return showNotification("З'єднання з викладачем втрачено. Оновіть сторінку.", true);
+        }
+        if (hostConnection && hostConnection.open) {
+            encryptPayload(claimMsg).then(enc => hostConnection.send(enc));
         }
         document.getElementById('loading-msg').innerText = "Підтвердження викладачем...";
         document.getElementById('student-identity-menu').classList.add('hidden');
         document.getElementById('loading-menu').classList.remove('hidden');
         startForensicWatermarking();
+        if (claimRetryTimer) clearInterval(claimRetryTimer);
+        let retries = 0;
+        claimRetryTimer = setInterval(() => {
+            retries++;
+            if (!document.getElementById('student-task-card').classList.contains('hidden') || retries > 6) {
+                clearInterval(claimRetryTimer);
+                claimRetryTimer = null;
+                return;
+            }
+            if (useProxy && currentHostId) sendViaProxy(currentHostId, myProxyClientId, 'host', claimMsg);
+        }, 1200);
     }
-    async function triggerStudentTaskRefresh() {
+    function applyStudentTaskState() {
+        const loadingMenuEl = document.getElementById('loading-menu');
+        const taskCardEl = document.getElementById('student-task-card');
+        const identityMenuEl = document.getElementById('student-identity-menu');
+        const statusBadge = document.getElementById('st-status-badge');
+        const modalStatusBadge = document.getElementById('modal-status-badge');
+        const taskBtn = document.getElementById('btn-my-task');
+        loadingMenuEl.classList.add('hidden');
+        identityMenuEl.classList.add('hidden');
+        taskCardEl.classList.remove('hidden');
+        document.getElementById('st-badge-name').innerText = myStudentName;
+        renderStudentSharePanel();
+        startForensicWatermarking();
+        renderTaskToSecureCanvas('st-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
+        renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
+        if (isMyTaskActive) {
+            if (statusBadge) {
+                statusBadge.innerText = "Завдання активовано";
+                statusBadge.className = "badge badge-ok";
+            }
+            if (modalStatusBadge) {
+                modalStatusBadge.innerText = "Активовано";
+                modalStatusBadge.className = "badge badge-ok";
+            }
+            if (taskBtn) {
+                taskBtn.classList.remove('task-inactive');
+                taskBtn.title = "Переглянути активне завдання";
+            }
+        } else {
+            if (statusBadge) {
+                statusBadge.innerText = "Очікування викладача";
+                statusBadge.className = "badge badge-wait";
+            }
+            if (modalStatusBadge) {
+                modalStatusBadge.innerText = "Очікування";
+                modalStatusBadge.className = "badge badge-wait";
+            }
+            if (taskBtn) {
+                taskBtn.classList.add('task-inactive');
+                taskBtn.title = "Завдання очікує активації";
+            }
+        }
+    }
+    function triggerStudentTaskRefresh() {
         const btn = document.getElementById('btn-student-task-resync');
         const icon = btn ? btn.querySelector('i') : null;
         if (icon) icon.classList.add('spin');
         const reqMsg = {
             type: 'STUDENT_TASK_RESYNC_REQ',
-            name: myStudentName
+            name: myStudentName,
+            clientId: myProxyClientId
         };
         if (useProxy && currentHostId) {
             sendViaProxy(currentHostId, myProxyClientId, 'host', reqMsg);
-        } else if (hostConnection && hostConnection.open) {
-            const enc = await encryptPayload(reqMsg);
-            hostConnection.send(enc);
-        } else {
-            showNotification("З'єднання втрачено. Перезавантажте сторінку.", true);
         }
-        setTimeout(() => {
-            if (icon) icon.classList.remove('spin');
-        }, 800);
+        if (hostConnection && hostConnection.open) {
+            encryptPayload(reqMsg).then(enc => hostConnection.send(enc));
+        }
+        setTimeout(() => { if (icon) icon.classList.remove('spin'); }, 800);
     }
     function updateStudentTimerUI(sec) {
         const badge = document.getElementById('st-timer-badge');
@@ -2220,18 +1626,13 @@
         }
     }
     function toggleTaskModal() {
-        if (!isMyTaskActive) {
-            showNotification("Ваше завдання наразі деактивовано викладачем! Перегляд заборонено.", true);
-            return;
-        }
         const modal = document.getElementById('task-modal');
         const isOpening = modal.style.display !== 'flex';
         modal.style.display = isOpening ? 'flex' : 'none';
         if (isOpening) {
-            renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, true);
+            renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
         }
     }
-    // --- STUDENT PRESERVED SHARE PANEL RENDERER ---
     function renderStudentSharePanel() {
         if (isLeader || !currentHostId) return;
         const panel = document.getElementById('student-share-panel');
@@ -2252,7 +1653,6 @@
         if (idEl) idEl.innerText = formatId(currentHostId);
         lucide.createIcons();
     }
-    // --- LOCK ROTARY INTERFACE ---
     function initLockInterface() {
         for (let i = 0; i < 9; i++) setupRotaryLock(i);
         updateManualInput();
@@ -2336,7 +1736,6 @@
     function getLockCode() {
         return lockDigits.join('');
     }
-    // --- CLIPBOARD & LINKS ---
     document.addEventListener('paste', (e) => {
         if(document.getElementById('listener-menu').classList.contains('hidden')) return;
         e.preventDefault();
@@ -2390,7 +1789,7 @@
                     }, 2000);
                 }
             });
-        } catch (err) { console.error("Copy failed", err); }
+        } catch (err) {}
     }
     async function shareId() {
         const code = myIdRaw || currentHostId;
@@ -2426,14 +1825,12 @@
     async function triggerResync() {
         const btnIcon = document.querySelector('.btn-inner i[data-lucide="refresh-cw"]');
         if(btnIcon) btnIcon.classList.add('spin');
-        const reqMsg = { type: 'RESYNC_REQ' };
+        const reqMsg = { type: 'RESYNC_REQ', clientId: myProxyClientId, name: myStudentName };
         if (useProxy && currentHostId) {
             sendViaProxy(currentHostId, myProxyClientId, 'host', reqMsg);
-        } else if (hostConnection && hostConnection.open) {
-            const enc = await encryptPayload(reqMsg);
-            hostConnection.send(enc);
-        } else {
-            if(confirm("З'єднання втрачено. Перезавантажити?")) window.location.reload();
+        }
+        if (hostConnection && hostConnection.open) {
+            encryptPayload(reqMsg).then(enc => hostConnection.send(enc));
         }
         setTimeout(() => { if(btnIcon) btnIcon.classList.remove('spin'); }, 1000);
     }
@@ -2580,7 +1977,6 @@
             renderPage(pageNum);
             return true;
         } catch (e) {
-            console.error("PDF Load Failed:", e);
             showNotification("Не вдалося завантажити PDF завдання.", true);
             return false;
         }
@@ -2632,24 +2028,22 @@
         const fsBtn = document.getElementById('fs-hand');
         if (myHandRaised) fsBtn.classList.add('fs-btn-active');
         else fsBtn.classList.remove('fs-btn-active');
-        const handMsg = { type: 'HAND', value: myHandRaised };
+        const handMsg = { type: 'HAND', value: myHandRaised, clientId: myProxyClientId };
         if (useProxy && currentHostId) {
             sendViaProxy(currentHostId, myProxyClientId, 'host', handMsg);
-        } else if (hostConnection && hostConnection.open) {
-            const enc = await encryptPayload(handMsg);
-            hostConnection.send(enc);
+        }
+        if (hostConnection && hostConnection.open) {
+            encryptPayload(handMsg).then(enc => hostConnection.send(enc));
         }
         if (myHandRaised) {
             handTimeout = setTimeout(async () => {
                 myHandRaised = false;
                 document.getElementById('btn-hand').classList.remove('hand-active');
                 document.getElementById('fs-hand').classList.remove('fs-btn-active');
-                const cancelMsg = { type: 'HAND', value: false };
-                if (useProxy && currentHostId) {
-                    sendViaProxy(currentHostId, myProxyClientId, 'host', cancelMsg);
-                } else if (hostConnection && hostConnection.open) {
-                    const enc = await encryptPayload(cancelMsg);
-                    hostConnection.send(enc);
+                const cancelMsg = { type: 'HAND', value: false, clientId: myProxyClientId };
+                if (useProxy && currentHostId) sendViaProxy(currentHostId, myProxyClientId, 'host', cancelMsg);
+                if (hostConnection && hostConnection.open) {
+                    encryptPayload(cancelMsg).then(enc => hostConnection.send(enc));
                 }
                 handTimeout = null;
             }, 10000);
@@ -2785,7 +2179,6 @@
         const max = 999999999;
         return Math.floor(Math.random() * (max - min + 1) + min).toString();
     }
-    // --- LEADER / TEACHER INITIALIZATION ---
     async function initLeader() {
         isLeader = true;
         updateToolbarForRole();
@@ -2793,11 +2186,9 @@
         drawCanvas.style.pointerEvents = 'auto';
         renderTeacherMatrix();
         myIdRaw = generateShortId();
-        // DERIVE E2EE AES-GCM KEY FROM EXAM ID
         e2eeCryptoKey = await deriveE2EEKey(myIdRaw);
         updateQRCodes();
         document.getElementById('btn-start-sync').disabled = false;
-        // Start Proxy polling if enabled
         if (useProxy) {
             startProxyPolling(myIdRaw, 'host', handleLeaderIncomingMessage);
         }
@@ -2807,21 +2198,19 @@
             if(err.type === 'unavailable-id') {
                 peer.destroy();
                 setTimeout(initLeader, 200);
-            } else {
-                console.warn("PeerJS LAN fallback notice:", err.type);
             }
         });
         setInterval(() => {
             if(!isLeader) return;
-            broadcast({ type: 'HEARTBEAT', page: pageNum });
             const now = Date.now();
             const beforeCount = connections.length;
-            connections = connections.filter(c => (now - c.lastPong) < 12000);
+            connections = connections.filter(c => (now - c.lastPong) < 15000);
             if(connections.length !== beforeCount) {
                 updateClientList();
-                renderTeacherMatrix();
                 updateHandOverlay();
             }
+            renderTeacherMatrix();
+            broadcastState();
         }, 2500);
         peer.on('connection', conn => {
             connections = connections.filter(c => c.id !== conn.peer);
@@ -2837,12 +2226,15 @@
             updateClientList();
             conn.on('open', async () => {
                 const initMsg = {
-                    type: 'INIT_EXAM_INFO',
+                    type: 'STATE_SYNC',
                     approved: studentsApproved,
-                    students: studentsApproved ? registeredStudents : [],
+                    students: registeredStudents,
                     claims: studentClaims,
+                    tasks: studentTasks,
+                    activeTasks: activeStudentTasks,
                     examStarted: examStarted,
-                    url: activeSourceUrl
+                    url: activeSourceUrl,
+                    page: pageNum
                 };
                 const enc = await encryptPayload(initMsg);
                 conn.send(enc);
@@ -2859,103 +2251,109 @@
             });
         });
     }
-    // UNIFIED MESSAGE PROCESSOR FOR LEADER (FROM PROXY & PEERJS)
     async function handleLeaderIncomingMessage(data, senderPeerId, directClient = null) {
-        let client = directClient;
+        const effectiveId = data.clientId || senderPeerId;
+        let client = directClient || connections.find(c => c.id === effectiveId || c.id === senderPeerId);
         if (!client) {
-            client = connections.find(c => c.id === senderPeerId);
-            if (!client) {
-                client = {
-                    id: senderPeerId,
-                    isProxy: true,
-                    conn: null,
-                    ready: false,
-                    handRaised: false,
-                    lastPong: Date.now()
-                };
-                connections.push(client);
-                updateClientList();
-                // Send Initial Exam State via Proxy
-                sendViaProxy(myIdRaw, 'host', senderPeerId, {
-                    type: 'INIT_EXAM_INFO',
-                    approved: studentsApproved,
-                    students: studentsApproved ? registeredStudents : [],
-                    claims: studentClaims,
-                    examStarted: examStarted,
-                    url: activeSourceUrl
-                });
-            }
+            client = {
+                id: effectiveId,
+                isProxy: !directClient,
+                conn: directClient ? directClient.conn : null,
+                ready: false,
+                handRaised: false,
+                lastPong: Date.now()
+            };
+            connections.push(client);
+            updateClientList();
         }
         client.lastPong = Date.now();
-        if (data.type === 'PONG') return; 
+        if (data.type === 'PONG' || data.type === 'HELLO' || data.type === 'PING') {
+            if (data.hand !== undefined) client.handRaised = !!data.hand;
+            if (data.student && !studentClaims[effectiveId]) studentClaims[effectiveId] = data.student;
+            renderTeacherMatrix();
+            updateHandOverlay();
+            return; 
+        }
         if (data.type === 'CLAIM_IDENTITY') {
-            if (!studentsApproved || !registeredStudents.includes(data.name)) {
-                sendDirectToPeer(senderPeerId, { type: 'CLAIM_RESULT', success: false, msg: 'Список ще не затверджено або прізвище відсутнє!' });
-                return;
+            const requestedName = (data.name || '').trim();
+            if (!requestedName) return;
+            const existingHolder = Object.keys(studentClaims).find(k => studentClaims[k] === requestedName);
+            if (existingHolder && existingHolder !== effectiveId && existingHolder !== senderPeerId) {
+                const existingConn = connections.find(c => c.id === existingHolder);
+                const isOnline = existingConn && (Date.now() - existingConn.lastPong < 10000);
+                if (isOnline) {
+                    sendDirectToPeer(effectiveId, { type: 'CLAIM_RESULT', success: false, msg: 'Це ім’я вже обрано іншим студентом онлайн!' });
+                    return;
+                }
             }
-            const claimedAlready = Object.values(studentClaims).includes(data.name);
-            if (claimedAlready) {
-                sendDirectToPeer(senderPeerId, { type: 'CLAIM_RESULT', success: false, msg: 'Це ім’я вже обрано іншим студентом!' });
-            } else {
-                studentClaims[senderPeerId] = data.name;
-                if (!studentViolations[senderPeerId]) studentViolations[senderPeerId] = 0;
-                sendDirectToPeer(senderPeerId, { type: 'CLAIM_RESULT', success: true, name: data.name });
-                const card = studentCards.find(c => c.name.trim() === data.name.trim());
-                const isActive = card ? !!card.active : false;
-                const remaining = (card && cardTimers[card.id]) ? cardTimers[card.id].remaining : null;
-                sendDirectToPeer(senderPeerId, {
-                    type: 'INDIVIDUAL_TASK',
-                    name: data.name,
-                    task: isActive ? (studentTasks[data.name] || '') : '',
-                    active: isActive,
-                    duration: remaining
-                });
-                broadcast({ type: 'CLAIMS_UPDATE', claims: studentClaims });
-                renderTeacherMatrix();
-                if (examStarted) syncSingleClient(client);
-            }
+            studentClaims[effectiveId] = requestedName;
+            if (effectiveId !== senderPeerId) studentClaims[senderPeerId] = requestedName;
+            if (!studentViolations[effectiveId]) studentViolations[effectiveId] = 0;
+            const card = studentCards.find(c => c.name.trim() === requestedName);
+            const isActive = card ? !!card.active : !!activeStudentTasks[requestedName];
+            const remaining = (card && cardTimers[card.id]) ? cardTimers[card.id].remaining : null;
+            const taskText = card ? (card.task || studentTasks[requestedName] || '') : (studentTasks[requestedName] || '');
+            sendDirectToPeer(effectiveId, {
+                type: 'CLAIM_RESULT',
+                success: true,
+                name: requestedName,
+                task: taskText,
+                active: isActive,
+                duration: remaining
+            });
+            broadcastState();
+            renderTeacherMatrix();
+            if (examStarted) syncSingleClient(client);
+            return;
         }
         if (data.type === 'STUDENT_TASK_RESYNC_REQ') {
-            const stName = data.name || studentClaims[senderPeerId];
+            const stName = data.name || studentClaims[effectiveId] || studentClaims[senderPeerId];
             if (stName) {
                 const card = studentCards.find(c => c.name.trim() === stName.trim());
-                const isActive = card ? !!card.active : false;
+                const isActive = card ? !!card.active : !!activeStudentTasks[stName];
                 const remaining = (card && cardTimers[card.id]) ? cardTimers[card.id].remaining : null;
-                sendDirectToPeer(senderPeerId, {
+                const taskText = card ? (card.task || studentTasks[stName] || '') : (studentTasks[stName] || '');
+                sendDirectToPeer(effectiveId, {
                     type: 'INDIVIDUAL_TASK',
                     name: stName,
-                    task: isActive ? (studentTasks[stName] || '') : '',
+                    task: taskText,
                     active: isActive,
                     duration: remaining
                 });
             }
             if (examStarted) syncSingleClient(client);
+            return;
         }
         if (data.type === 'VIOLATION') {
-            studentViolations[senderPeerId] = (studentViolations[senderPeerId] || 0) + 1;
+            studentViolations[effectiveId] = (studentViolations[effectiveId] || 0) + 1;
             renderTeacherMatrix();
             showNotification(`⚠️ УВАГА: Студент ${data.student || 'Невідомий'} порушив правила DRM (${data.reason})!`, true);
+            return;
         }
         if (data.type === 'ACK_READY') {
             client.ready = true;
             updateClientList();
             if(examStarted) {
-                sendDirectToPeer(senderPeerId, { type: 'PAGE', value: pageNum });
+                sendDirectToPeer(effectiveId, { type: 'PAGE', value: pageNum });
                 if(pageMarks[pageNum]) {
-                    pageMarks[pageNum].forEach(line => sendDirectToPeer(senderPeerId, { type: 'DRAW', coords: line }));
+                    pageMarks[pageNum].forEach(line => sendDirectToPeer(effectiveId, { type: 'DRAW', coords: line }));
                 }
             }
+            return;
         }
         if (data.type === 'HAND') {
-            client.handRaised = data.value;
+            client.handRaised = !!data.value;
             updateHandOverlay();
             renderTeacherMatrix();
+            return;
         }
         if (data.type === 'RESYNC_REQ') {
-            sendDirectToPeer(senderPeerId, { type: 'PAGE', value: pageNum });
+            sendDirectToPeer(effectiveId, { type: 'PAGE', value: pageNum });
             if(pageMarks[pageNum]) {
-                pageMarks[pageNum].forEach(line => sendDirectToPeer(senderPeerId, { type: 'DRAW', coords: line }));
+                pageMarks[pageNum].forEach(line => sendDirectToPeer(effectiveId, { type: 'DRAW', coords: line }));
             }
+            broadcastState();
+            return;
         }
     }
     async function sendDirectToPeer(peerId, obj) {
@@ -2963,7 +2361,8 @@
         if (client && client.conn && client.conn.open) {
             const enc = await encryptPayload(obj);
             client.conn.send(enc);
-        } else if (useProxy) {
+        }
+        if (useProxy && myIdRaw) {
             sendViaProxy(myIdRaw, 'host', peerId, obj);
         }
     }
@@ -2979,12 +2378,13 @@
         if (studentCards.length === 0) {
             html = '<div style="color: #888; text-align: center; padding: 12px; font-size: 0.8rem;">Картки студентів ще не створено.</div>';
         } else {
+            const now = Date.now();
             studentCards.forEach(c => {
                 const stName = c.name.trim();
                 if (!stName) return;
                 const peerId = Object.keys(studentClaims).find(k => studentClaims[k] === stName);
-                const isOnline = peerId && connections.some(conn => conn.id === peerId);
-                const clientConn = isOnline ? connections.find(conn => conn.id === peerId) : null;
+                const clientConn = peerId ? connections.find(conn => conn.id === peerId) : null;
+                const isOnline = !!clientConn && (now - clientConn.lastPong < 10000);
                 const handRaised = clientConn ? clientConn.handRaised : false;
                 const violations = peerId ? (studentViolations[peerId] || 0) : 0;
                 let badge = '<span class="badge badge-wait">Очікує</span>';
@@ -3017,9 +2417,7 @@
             document.getElementById('ui-layer').classList.add('hidden');
             if(html5QrcodeScanner) try { html5QrcodeScanner.clear(); } catch(e){}
             connections.forEach(c => syncSingleClient(c));
-            if (useProxy) {
-                sendViaProxy(myIdRaw, 'host', 'all', { type: 'START_EXAM', url: activeSourceUrl });
-            }
+            broadcastState();
         } else {
             inputField.classList.add('input-error');
             lbl.style.display = 'none';
@@ -3033,9 +2431,24 @@
         if (client.conn && client.conn.open) {
             const enc = await encryptPayload(startMsg);
             client.conn.send(enc);
-        } else if (useProxy) {
+        }
+        if (useProxy && myIdRaw) {
             sendViaProxy(myIdRaw, 'host', client.id, startMsg);
         }
+    }
+    function broadcastState() {
+        if (!isLeader || !myIdRaw) return;
+        broadcast({
+            type: 'STATE_SYNC',
+            page: pageNum,
+            approved: studentsApproved,
+            students: registeredStudents,
+            claims: studentClaims,
+            tasks: studentTasks,
+            activeTasks: activeStudentTasks,
+            examStarted: examStarted,
+            url: activeSourceUrl
+        });
     }
     async function broadcast(msg) {
         const enc = await encryptPayload(msg);
@@ -3046,100 +2459,130 @@
             sendViaProxy(myIdRaw, 'host', 'all', msg);
         }
     }
-    // --- STUDENT JOIN FLOW (WITH PROXY & PEERJS HYBRID SUPPORT) ---
     async function joinExamSession(id, pageParam) {
         let hostId = id || getLockCode(); 
         hostId = hostId.replace(/\s/g, '');
         if (!hostId) return showNotification("Введіть правильний ID сесії!", true);
         if (!hostId.startsWith(APP_PREFIX)) hostId = APP_PREFIX + hostId;
         currentHostId = hostId.replace(APP_PREFIX, ''); 
-        // DERIVE E2EE AES-GCM KEY FROM HOST CODE
         e2eeCryptoKey = await deriveE2EEKey(currentHostId);
         const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?host=' + currentHostId + '&proxy=' + (useProxy ? 1 : 0);
         window.history.replaceState({path: newUrl}, '', newUrl);
         if(pageParam) pageNum = parseInt(pageParam);
         document.getElementById('listener-menu').classList.add('hidden');
         document.getElementById('loading-menu').classList.remove('hidden');
-        document.getElementById('loading-msg').innerText = "Підключення до сесії (E2EE)...";
+        document.getElementById('loading-msg').innerText = "Підключення до сесії...";
         isLeader = false;
         updateToolbarForRole();
         if(html5QrcodeScanner) try { html5QrcodeScanner.clear(); } catch(e){}
-        myProxyClientId = 'st_' + generateShortId();
-        // 1. If Proxy mode is active -> Start Proxy Polling
         if (useProxy) {
             startProxyPolling(currentHostId, myProxyClientId, handleStudentIncomingMessage);
-            document.getElementById('loading-msg').innerText = "З'єднано через безпечний проксі. Очікування викладача...";
             renderStudentSharePanel();
-            // Send registration heartbeat to teacher
-            sendViaProxy(currentHostId, myProxyClientId, 'host', { type: 'HELLO' });
+            sendViaProxy(currentHostId, myProxyClientId, 'host', { 
+                type: 'HELLO',
+                clientId: myProxyClientId,
+                student: sessionStorage.getItem('examsync_student_name') || ''
+            });
         }
-        // 2. Also attempt PeerJS WebRTC connection in parallel (for instant LAN performance)
         peer = new Peer();
         peer.on('open', () => {
             const conn = peer.connect(hostId, { reliable: true });
             hostConnection = conn;
             conn.on('open', () => {
-                document.getElementById('loading-msg').innerText = "З'єднано. Очікування викладача...";
                 renderStudentSharePanel();
+                conn.send(JSON.stringify({ 
+                    type: 'HELLO', 
+                    clientId: myProxyClientId,
+                    student: sessionStorage.getItem('examsync_student_name') || ''
+                }));
             });
             conn.on('data', async raw => {
                 const data = await decryptPayload(raw);
                 if (data) handleStudentIncomingMessage(data);
             });
-            conn.on('close', () => {
-                if (!useProxy) showNotification("Зв'язок з викладачем перервано!", true);
-            });
         });
-        peer.on('error', (err) => {
-            if (!useProxy) {
-                showNotification('Сесію викладача не знайдено в локальній мережі.', true);
+        setInterval(() => {
+            if (isLeader || !currentHostId) return;
+            const pingMsg = {
+                type: 'PING',
+                clientId: myProxyClientId,
+                student: myStudentName || sessionStorage.getItem('examsync_student_name') || '',
+                hand: myHandRaised
+            };
+            if (useProxy) sendViaProxy(currentHostId, myProxyClientId, 'host', pingMsg);
+            if (hostConnection && hostConnection.open) {
+                encryptPayload(pingMsg).then(enc => hostConnection.send(enc));
             }
-        });
+        }, 2500);
     }
-    // UNIFIED STUDENT INCOMING MESSAGE HANDLER
     async function handleStudentIncomingMessage(data) {
-        if (data.type === 'HEARTBEAT') {
-            const pongMsg = { type: 'PONG' };
-            if (useProxy && currentHostId) {
-                sendViaProxy(currentHostId, myProxyClientId, 'host', pongMsg);
-            } else if (hostConnection && hostConnection.open) {
-                const enc = await encryptPayload(pongMsg);
-                hostConnection.send(enc);
+        if (data.type === 'HEARTBEAT' || data.type === 'PING') {
+            const pongMsg = { type: 'PONG', clientId: myProxyClientId };
+            if (useProxy && currentHostId) sendViaProxy(currentHostId, myProxyClientId, 'host', pongMsg);
+            if (hostConnection && hostConnection.open) {
+                encryptPayload(pongMsg).then(enc => hostConnection.send(enc));
             }
-            if(pdfDoc && !pageRendering && pageNum !== data.page) {
+            if(pdfDoc && !pageRendering && data.page && pageNum !== data.page) {
                 pageNum = data.page;
                 clearDrawings(false); 
                 queueRenderPage(pageNum);
-                triggerResync();
             }
             return;
         }
-        if (data.type === 'INIT_EXAM_INFO' || data.type === 'STUDENT_LIST_SYNC') {
+        if (data.type === 'STATE_SYNC' || data.type === 'INIT_EXAM_INFO' || data.type === 'STUDENT_LIST_SYNC') {
             studentsApproved = !!data.approved;
             if (data.students) registeredStudents = data.students;
             if (data.claims) studentClaims = data.claims;
-            if (studentsApproved && registeredStudents.length > 0) {
-                if (!myStudentName) {
+            if (data.tasks) studentTasks = data.tasks;
+            if (data.activeTasks) activeStudentTasks = data.activeTasks;
+            const savedName = sessionStorage.getItem('examsync_student_name');
+            if (!myStudentName && savedName && registeredStudents.includes(savedName)) {
+                myStudentName = savedName;
+                confirmStudentIdentity(savedName);
+            } else if (!myStudentName) {
+                if (studentsApproved && registeredStudents.length > 0) {
                     showStudentClaimMenu(registeredStudents, studentClaims);
-                }
-            } else {
-                if (!myStudentName) {
+                } else {
                     showWaitingForTeacherApproval();
                 }
+            } else {
+                const taskActive = !!activeStudentTasks[myStudentName];
+                const taskContent = studentTasks[myStudentName] || '';
+                if (taskActive !== isMyTaskActive || taskContent !== myIndividualTask) {
+                    isMyTaskActive = taskActive;
+                    myIndividualTask = taskContent;
+                    applyStudentTaskState();
+                }
             }
+            if (data.examStarted && data.url && !examStarted) {
+                loadExamPdf(data.url);
+            }
+            if (data.page && pageNum !== data.page && pdfDoc && !pageRendering) {
+                pageNum = data.page;
+                clearDrawings(false);
+                queueRenderPage(pageNum);
+            }
+            return;
         }
         if (data.type === 'CLAIMS_UPDATE') {
             studentClaims = data.claims || {};
             if (!myStudentName && studentsApproved && registeredStudents.length > 0) {
                 showStudentClaimMenu(registeredStudents, studentClaims);
             }
+            return;
         }
         if (data.type === 'CLAIM_RESULT') {
+            if (claimRetryTimer) {
+                clearInterval(claimRetryTimer);
+                claimRetryTimer = null;
+            }
             if (data.success) {
                 myStudentName = data.name;
-                startForensicWatermarking();
-                renderStudentSharePanel();
-                document.getElementById('loading-msg').innerText = "Ідентифіковано! Очікуйте активації вашого завдання викладачем...";
+                sessionStorage.setItem('examsync_student_name', myStudentName);
+                if (data.task !== undefined) myIndividualTask = data.task;
+                if (data.active !== undefined) isMyTaskActive = !!data.active;
+                applyStudentTaskState();
+                if (data.duration && isMyTaskActive) startStudentCountdown(data.duration);
             } else {
                 showNotification(data.msg || "Помилка вибору імені", true);
                 if (studentsApproved && registeredStudents.length > 0) {
@@ -3148,101 +2591,67 @@
                     showWaitingForTeacherApproval();
                 }
             }
+            return;
         }
         if (data.type === 'INDIVIDUAL_TASK') {
             isMyTaskActive = !!data.active;
-            myIndividualTask = isMyTaskActive ? (data.task || '') : '';
-            const taskCardEl = document.getElementById('student-task-card');
-            const taskModalEl = document.getElementById('task-modal');
-            const loadingMenuEl = document.getElementById('loading-menu');
-            const loadingMsgEl = document.getElementById('loading-msg');
-            const taskBtn = document.getElementById('btn-my-task');
-            if (studentCountdownInterval) {
-                clearInterval(studentCountdownInterval);
-                studentCountdownInterval = null;
-            }
-            renderTaskToSecureCanvas('st-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
-            renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
-            if (isMyTaskActive) {
-                document.getElementById('st-badge-name').innerText = myStudentName;
-                if (taskBtn) {
-                    taskBtn.classList.remove('task-inactive');
-                    taskBtn.title = "Переглянути активне завдання";
-                }
-                if (data.duration && data.duration > 0) {
-                    let timeLeft = data.duration;
-                    updateStudentTimerUI(timeLeft);
-                    studentCountdownInterval = setInterval(() => {
-                        timeLeft--;
-                        if (timeLeft <= 0) {
-                            clearInterval(studentCountdownInterval);
-                            studentCountdownInterval = null;
-                            updateStudentTimerUI(0);
-                            isMyTaskActive = false;
-                            renderTaskToSecureCanvas('st-task-canvas', myIndividualTask, myStudentName, false);
-                            renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, false);
-                        } else {
-                            updateStudentTimerUI(timeLeft);
-                        }
-                    }, 1000);
-                } else {
-                    updateStudentTimerUI(null);
-                }
-                if (document.getElementById('ui-layer').classList.contains('hidden')) {
-                    showNotification("Викладач щойно активував ваше персональне завдання! Відкрийте розділ «Завдання» у меню.", false);
-                } else {
-                    loadingMenuEl.classList.add('hidden');
-                    document.getElementById('student-identity-menu').classList.add('hidden');
-                    taskCardEl.classList.remove('hidden');
-                }
-                startForensicWatermarking();
-            } else {
-                updateStudentTimerUI(null);
-                if (taskModalEl) taskModalEl.style.display = 'none';
-                if (taskBtn) {
-                    taskBtn.classList.add('task-inactive');
-                    taskBtn.title = "Завдання деактивовано";
-                }
-                if (!taskCardEl.classList.contains('hidden')) {
-                    taskCardEl.classList.add('hidden');
-                    loadingMenuEl.classList.remove('hidden');
-                    loadingMsgEl.innerHTML = `
-                        <span style="color:var(--color-error); font-weight:700;">Завдання деактивовано викладачем</span><br>
-                        <span style="font-size:0.8rem; font-weight:500; color:#666; margin-top:8px; display:block;">
-                            Доступ до питання призупинено або час вичерпано. Очікуйте вказівки викладача.
-                        </span>`;
-                }
-            }
-            renderStudentSharePanel();
+            myIndividualTask = data.task || '';
+            applyStudentTaskState();
+            if (data.duration && isMyTaskActive) startStudentCountdown(data.duration);
+            else updateStudentTimerUI(null);
+            return;
         }
         if (data.type === 'START_EXAM') {
-            document.getElementById('loading-msg').innerText = "Завантаження завдань екзамену...";
-            const ok = await renderPdf(data.url);
-            if(ok) {
-                const ack = { type: 'ACK_READY' };
-                if (useProxy && currentHostId) {
-                    sendViaProxy(currentHostId, myProxyClientId, 'host', ack);
-                } else if (hostConnection && hostConnection.open) {
-                    const enc = await encryptPayload(ack);
-                    hostConnection.send(enc);
-                }
-                examStarted = true;
-                document.getElementById('ui-layer').classList.add('hidden');
-                const currentUrl = window.location.href.split('?')[0] + '?host=' + currentHostId + '&proxy=' + (useProxy ? 1 : 0);
-                document.getElementById('qr-modal-id').innerText = formatId(currentHostId);
-                document.getElementById("qrcode-modal-tgt").innerHTML = "";
-                new QRCode(document.getElementById("qrcode-modal-tgt"), { text: currentUrl, width: 220, height: 220, colorDark: "#000000" });
-                startForensicWatermarking();
-                renderStudentSharePanel();
-            }
+            loadExamPdf(data.url);
+            return;
         }
         if (data.type === 'PAGE') {
             pageNum = data.value;
             clearDrawings(false); 
             if(pdfDoc) queueRenderPage(pageNum);
+            return;
         }
         if (data.type === 'DRAW') receiveDraw(data.coords[0], data.coords[1], data.coords[2], data.coords[3]);
         if (data.type === 'CLEAR') clearDrawings(true);
+    }
+    async function loadExamPdf(url) {
+        document.getElementById('loading-msg').innerText = "Завантаження завдань екзамену...";
+        const ok = await renderPdf(url);
+        if(ok) {
+            const ack = { type: 'ACK_READY', clientId: myProxyClientId };
+            if (useProxy && currentHostId) sendViaProxy(currentHostId, myProxyClientId, 'host', ack);
+            if (hostConnection && hostConnection.open) {
+                encryptPayload(ack).then(enc => hostConnection.send(enc));
+            }
+            examStarted = true;
+            document.getElementById('ui-layer').classList.add('hidden');
+            const currentUrl = window.location.href.split('?')[0] + '?host=' + currentHostId + '&proxy=' + (useProxy ? 1 : 0);
+            document.getElementById('qr-modal-id').innerText = formatId(currentHostId);
+            document.getElementById("qrcode-modal-tgt").innerHTML = "";
+            new QRCode(document.getElementById("qrcode-modal-tgt"), { text: currentUrl, width: 220, height: 220, colorDark: "#000000" });
+            startForensicWatermarking();
+            renderStudentSharePanel();
+        }
+    }
+    function startStudentCountdown(seconds) {
+        if (studentCountdownInterval) {
+            clearInterval(studentCountdownInterval);
+            studentCountdownInterval = null;
+        }
+        let timeLeft = seconds;
+        updateStudentTimerUI(timeLeft);
+        studentCountdownInterval = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(studentCountdownInterval);
+                studentCountdownInterval = null;
+                updateStudentTimerUI(0);
+                isMyTaskActive = false;
+                applyStudentTaskState();
+            } else {
+                updateStudentTimerUI(timeLeft);
+            }
+        }, 1000);
     }
 </script>
 </body>
