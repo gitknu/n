@@ -1,0 +1,3168 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>ExamSync — Контроль та Проведення Іспитів</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+:root{--color-bg:#222;--color-card:#fff;--color-attention-high:#b80000;--color-attention-med:#0b5394;--color-hand:#f59e0b;--color-success:#2e7d32;--color-error:#c62828;--color-text:#000;--color-border:#ccc;--shadow:0 4px 20px rgba(0,0,0,0.15);--landscape-rotation:0deg;--toolbar-size:75px;}
+*{box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;}
+input,textarea{user-select:text!important;-webkit-user-select:text!important;}
+@media print{html,body,*{display:none!important;visibility:hidden!important;}}
+body{margin:0;padding:0;background-color:var(--color-bg);color:var(--color-text);font-family:'Montserrat',sans-serif;font-size:16px;position:fixed;top:0;left:0;right:0;bottom:0;height:100dvh;width:100%;overflow:hidden;display:flex;flex-direction:column;}
+#forensic-watermark{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none!important;z-index:180;display:none;}
+#drm-curtain{position:fixed;top:0;left:0;width:100vw;height:100vh;background:#000!important;color:#fff;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:25px;}
+#drm-curtain i{width:80px;height:80px;margin-bottom:20px;color:var(--color-attention-high);}
+#drm-curtain h2{font-size:1.6rem;margin:0 0 10px 0;color:#ff4d4d;letter-spacing:1px;font-weight:800;}
+#drm-curtain p{max-width:480px;font-size:0.95rem;color:#d1d5db;margin:0 0 25px 0;line-height:1.5;}
+body.drm-blackout #student-task-card,body.drm-blackout #pdf-container,body.drm-blackout .task-canvas-wrapper,body.drm-blackout #task-modal,body.drm-blackout #ui-layer,body.drm-blackout #student-share-panel{filter:blur(50px) brightness(0)!important;visibility:hidden!important;opacity:0!important;}
+#student-share-panel{position:fixed;background:#fff;border:2px solid var(--color-attention-med);box-shadow:0 4px 18px rgba(0,0,0,0.15);z-index:215;display:flex;flex-direction:column;padding:8px 10px;box-sizing:border-box;}
+.share-panel-header{display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:4px;}
+.share-panel-title{font-size:0.72rem;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:0.3px;}
+.share-panel-body{display:flex;align-items:center;width:100%;flex:1;gap:8px;}
+#student-qr-container{background:#fff;padding:3px;border:1.5px solid var(--color-attention-med);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+#student-qr-container img,#student-qr-container canvas{max-width:100%;max-height:100%;display:block;}
+.share-panel-info{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:3px;}
+@media (max-width:767px){
+#student-share-panel{top:0;left:0;width:100%;height:32vh;min-height:160px;max-height:220px;border-radius:0 0 16px 16px;border-top:none;}
+#student-qr-container{width:95px;height:95px;}
+body.student-connected #ui-layer{top:32vh;height:68vh;padding:8px;}
+body.student-connected #pdf-container{margin-top:32vh;height:calc(100dvh - 32vh - var(--toolbar-size));}
+}
+@media (min-width:768px){
+#student-share-panel{top:14px;left:14px;width:220px;height:auto;border-radius:14px;}
+.share-panel-body{flex-direction:column;gap:6px;}
+#student-qr-container{width:115px;height:115px;}
+body.student-connected #ui-layer{padding-left:240px;}
+}
+body.fullscreen-mode #student-share-panel{display:none!important;}
+#ui-layer{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(244,244,244,1);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;}
+.card{background:var(--color-card);color:var(--color-text);padding:1rem;border-radius:1.2rem;text-align:center;width:100%;max-width:440px;height:auto;max-height:96%;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;box-shadow:var(--shadow);border:2px solid var(--color-border);gap:8px;transition:all 0.3s ease;}
+.hidden{display:none!important;}
+h3{margin:0;color:var(--color-text);font-weight:700;font-size:1.15rem;flex-shrink:0;}
+p.card-desc{margin:0;font-size:0.8rem;color:#555;}
+#role-menu{display:flex;flex-direction:column;gap:15px;width:100%;max-width:500px;height:100%;padding:10px 0;justify-content:center;}
+.role-btn{flex:1;max-height:40vh;border:none;border-radius:1.2rem;font-family:'Montserrat',sans-serif;font-size:clamp(1.4rem,4vw,1.8rem);font-weight:800;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;box-shadow:0 6px 15px rgba(0,0,0,0.2);transition:transform 0.15s,box-shadow 0.15s;text-transform:uppercase;}
+.role-btn:active{transform:scale(0.97);}
+.role-listener{background-color:var(--color-attention-high);border:2px solid var(--color-attention-high);}
+.role-speaker{background-color:var(--color-attention-med);border:2px solid var(--color-attention-med);}
+.action-bar{display:flex;width:100%;gap:10px;margin-top:6px;flex-shrink:0;}
+button.btn-primary{background:var(--color-attention-high);color:#fff;border:none;padding:0.65rem;font-size:1.05rem;font-family:'Montserrat',sans-serif;font-weight:700;border-radius:0.8rem;cursor:pointer;flex:2;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 10px rgba(184,0,0,0.3);text-transform:uppercase;transition:background-color 0.2s,transform 0.1s;}
+button.btn-primary:active{transform:scale(0.98);}
+button.btn-primary:disabled{opacity:0.5;cursor:not-allowed;box-shadow:none;}
+button.btn-secondary{background:#fff;color:var(--color-attention-med);border:2px solid var(--color-attention-med);padding:0.6rem;font-size:1rem;font-weight:600;border-radius:0.8rem;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif;transition:background-color 0.2s;}
+button.btn-secondary:active{background:#f0f8ff;}
+.icon-btn-group{display:flex;gap:8px;margin-top:4px;}
+.icon-btn{background:#f0f0f0;border:1px solid #ddd;border-radius:8px;padding:6px 12px;color:#555;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:0.8rem;font-weight:600;transition:all 0.2s;}
+.icon-btn:active{transform:scale(0.95);background:#e0e0e0;}
+.icon-btn i{width:16px;height:16px;}
+.btn-success{background:#e8f5e9;color:var(--color-success);border-color:var(--color-success);}
+.btn-approve{background:#e8f5e9;color:var(--color-success);border-color:var(--color-success);font-weight:700;}
+.btn-danger-action{background:#fff5f5!important;color:var(--color-error)!important;border-color:#fca5a5!important;}
+.btn-danger-action:hover{background:#fee2e2!important;color:#991b1b!important;}
+input[type="text"],input[type="password"],input[type="tel"],select,textarea{padding:0.55rem;width:100%;background:#fff;border:2px solid var(--color-attention-med);color:#111;border-radius:0.8rem;outline:none;font-size:0.9rem;text-align:left;font-family:'Montserrat',sans-serif;font-weight:600;flex-shrink:0;transition:border-color 0.3s,background-color 0.3s;}
+textarea{resize:vertical;min-height:70px;font-weight:500;font-size:0.8rem;line-height:1.35;}
+textarea::placeholder{color:#999;font-style:italic;}
+select{cursor:pointer;background:#fff;}
+input.input-success{border-color:var(--color-success)!important;background-color:#e8f5e9!important;color:var(--color-success)!important;}
+input.input-error{border-color:var(--color-error)!important;background-color:#ffebee!important;color:var(--color-error)!important;}
+.speaker-dashboard{display:flex;flex-direction:column;gap:12px;width:100%;height:100%;}
+.matrix-wrapper{display:flex;flex-direction:column;width:100%;flex:1;min-height:0;border:1px solid var(--color-border);border-radius:12px;background:#fdfdfd;padding:10px;}
+.matrix-toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #eee;}
+.matrix-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;overflow-y:auto;padding-right:6px;flex:1;min-height:160px;}
+.matrix-grid::-webkit-scrollbar{width:6px;}
+.matrix-grid::-webkit-scrollbar-thumb{background:#ccc;border-radius:4px;}
+.student-card{background:#fff;border:2px solid #e2e8f0;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;text-align:left;transition:all 0.2s ease;box-shadow:0 2px 6px rgba(0,0,0,0.04);position:relative;}
+.student-card:hover{box-shadow:0 4px 12px rgba(0,0,0,0.08);border-color:#cbd5e1;}
+.student-card.active-task{border-color:var(--color-success);background:#fcfdfc;box-shadow:0 0 0 1px var(--color-success),0 3px 10px rgba(46,125,50,0.15);}
+.student-card.online{border-left:5px solid var(--color-success);}
+.student-card-header{display:flex;align-items:center;gap:6px;width:100%;}
+.student-name-input{flex:1;font-weight:700;font-size:0.88rem;color:#1e293b;border:1px solid transparent;background:#f8fafc;border-radius:6px;padding:5px 8px;outline:none;transition:all 0.2s;font-family:inherit;}
+.student-name-input:hover{border-color:#cbd5e1;background:#fff;}
+.student-name-input:focus{border-color:var(--color-attention-med);background:#fff;box-shadow:0 0 0 2px rgba(11,83,148,0.15);}
+.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.status-dot.online{background-color:var(--color-success);box-shadow:0 0 6px rgba(46,125,50,0.6);}
+.status-dot.offline{background-color:#cbd5e1;}
+.btn-card-icon{background:none;border:none;cursor:pointer;padding:4px;color:#94a3b8;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.btn-card-icon:hover{background:#fee2e2;color:var(--color-error);}
+.student-card-task{font-size:0.82rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px;min-height:60px;max-height:100px;overflow-y:auto;font-family:inherit;font-weight:500;resize:vertical;width:100%;line-height:1.35;transition:border-color 0.2s;}
+.student-card-task:focus{border-color:var(--color-attention-med);background:#fff;outline:none;}
+.student-card-footer{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:auto;padding-top:4px;}
+.btn-matrix-toggle{border:none;padding:6px 12px;border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;text-transform:uppercase;transition:all 0.2s;letter-spacing:0.3px;}
+.btn-matrix-activate{background:var(--color-attention-med);color:#fff;box-shadow:0 2px 5px rgba(11,83,148,0.25);}
+.btn-matrix-activate:hover{background:#083c6c;transform:translateY(-1px);}
+.btn-matrix-deactivate{background:#fee2e2;color:var(--color-error);border:1px solid #fca5a5;}
+.btn-matrix-deactivate:hover{background:#fecaca;color:#991b1b;}
+.btn-add-card{background:var(--color-attention-med);color:#fff;border:none;font-weight:700;border-radius:8px;padding:6px 12px;font-size:0.8rem;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 6px rgba(11,83,148,0.2);}
+.btn-add-card:hover{background:#083c6c;transform:translateY(-1px);}
+.btn-add-card:active{transform:scale(0.97);}
+.task-inactive{opacity:0.5;filter:grayscale(1);}
+.task-canvas-wrapper{width:100%;background:#fff;border:2px solid #cbd5e1;border-radius:10px;overflow:hidden;display:flex;justify-content:center;align-items:center;box-shadow:inset 0 2px 4px rgba(0,0,0,0.03);}
+.task-canvas-wrapper canvas{display:block;width:100%;pointer-events:none;}
+.mobile-only-badge{display:none;}
+body.mobile-teacher .exam-only{display:none!important;}
+body.mobile-teacher .mobile-only-badge{display:inline-flex;}
+body.mobile-teacher #speaker-menu.card{max-width:440px;width:100%;height:auto;max-height:96%;padding:1rem;overflow-y:auto;}
+body.mobile-teacher .speaker-dashboard{display:flex;flex-direction:column;height:auto;overflow:visible;}
+body.mobile-teacher .speaker-left-col{overflow-y:visible;padding-right:0;text-align:center;}
+@media (min-width:900px){
+#ui-layer{padding:20px;}
+#role-menu{flex-direction:row;max-width:760px;max-height:320px;gap:24px;}
+.role-btn{height:100%;max-height:100%;padding:2.5rem 1.5rem;font-size:1.6rem;}
+#speaker-menu.card{max-width:1400px;width:96vw;height:92vh;max-height:92vh;padding:1.2rem;overflow:hidden;}
+.speaker-dashboard{display:grid;grid-template-columns:330px 1fr;gap:16px;height:calc(100% - 40px);overflow:hidden;text-align:left;}
+.speaker-left-col{display:flex;flex-direction:column;gap:6px;height:100%;overflow-y:auto;padding-right:4px;}
+.speaker-right-col{display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden;}
+#listener-menu.card,#student-identity-menu.card,#loading-menu.card,#student-task-card.card{max-width:520px;padding:1.5rem;}
+}
+@media (hover:hover) and (pointer:fine){
+.role-btn:hover{transform:translateY(-4px);box-shadow:0 10px 25px rgba(0,0,0,0.25);}
+button.btn-primary:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-1px);}
+button.btn-secondary:hover{background:#f0f8ff;}
+.icon-btn:hover{background:#e4e4e4;}
+.btn-approve:hover{background:#c8e6c9!important;}
+.keypad-btn:hover{background:#eef6ff;border-color:var(--color-attention-med);}
+.keypad-btn.keypad-clear:hover{background:#fee2e2;border-color:#ef4444;}
+}
+#lock-ui-wrapper{display:flex;flex-direction:column;width:100%;align-items:center;margin:2px 0;position:relative;}
+#ghost-input{position:absolute;opacity:0;top:0;left:0;width:100%;height:100%;z-index:10;pointer-events:none;}
+#lock-container{display:flex;justify-content:center;align-items:center;gap:4px;width:100%;user-select:none;flex-shrink:0;perspective:500px;transition:box-shadow 0.3s;border-radius:10px;padding:4px;}
+#lock-container.focused{box-shadow:0 0 0 2px var(--color-attention-med);background-color:rgba(11,83,148,0.05);}
+.lock-group{display:flex;gap:3px;}
+.lock-spacer{width:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.3rem;color:#666;}
+.lock-roller{width:34px;height:48px;background:#fff;border:2px solid #ccc;border-radius:6px;font-size:1.6rem;font-weight:800;color:var(--color-text);display:flex;align-items:center;justify-content:center;cursor:grab;position:relative;overflow:hidden;box-shadow:inset 0 0 10px rgba(0,0,0,0.1);touch-action:none;transition:border-color 0.2s,box-shadow 0.2s;}
+.lock-roller.active-cursor{border-color:var(--color-attention-med);box-shadow:inset 0 0 10px rgba(11,83,148,0.12);}
+.lock-roller::before{content:'';position:absolute;top:0;left:0;right:0;height:10px;background:linear-gradient(to bottom,rgba(0,0,0,0.2),transparent);pointer-events:none;}
+.lock-roller::after{content:'';position:absolute;bottom:0;left:0;right:0;height:10px;background:linear-gradient(to top,rgba(0,0,0,0.2),transparent);pointer-events:none;}
+.lock-roller:active{cursor:grabbing;border-color:var(--color-attention-med);}
+.lock-roller span{z-index:1;pointer-events:none;}
+.lock-arrow-row{display:flex;justify-content:center;gap:4px;width:100%;color:#999;margin:2px 0;}
+.lock-arrow-group{display:flex;gap:3px;}
+.lock-arrow-spacer{width:14px;}
+.arrow-icon{width:34px;height:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.arrow-icon:active{transform:scale(0.9);color:var(--color-attention-med);}
+.arrow-icon svg{width:16px;height:16px;stroke-width:3px;}
+#onscreen-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;width:100%;max-width:250px;margin:2px auto;flex-shrink:0;}
+.keypad-btn{background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:10px;height:38px;font-family:'Montserrat',sans-serif;font-size:1.1rem;font-weight:700;color:#1e293b;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background-color 0.12s,transform 0.1s,border-color 0.12s;box-shadow:0 2px 4px rgba(0,0,0,0.05);}
+.keypad-btn:active{transform:scale(0.94);background:#e2e8f0;border-color:var(--color-attention-med);}
+.keypad-btn.keypad-fn{background:#f1f5f9;color:var(--color-attention-med);font-size:0.95rem;}
+.keypad-btn.keypad-clear{color:var(--color-error);background:#fff5f5;border-color:#fca5a5;}
+.keypad-btn.keypad-clear:active{background:#fee2e2;}
+#reader{width:100%;max-width:280px;margin:0 auto;background:#000;border:2px solid var(--color-attention-med);border-radius:10px;overflow:hidden;min-height:200px;}
+#reader video{width:100%;height:100%;object-fit:cover;display:block;}
+#reader__dashboard_section_csr button{background-color:var(--color-attention-high)!important;color:#fff!important;border:none!important;padding:8px 16px!important;border-radius:8px!important;font-family:'Montserrat',sans-serif!important;font-weight:700!important;margin:10px auto!important;display:block!important;cursor:pointer;}
+#html5-qrcode-anchor-scan-type-change{display:none!important;}
+#qr-container{background:#fff;padding:4px;display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--color-attention-med);border-radius:10px;flex-shrink:1;max-height:15vh;aspect-ratio:1/1;}
+#qr-container img{max-width:100%;max-height:100%;object-fit:contain;}
+#pdf-container{flex:1;width:100%;min-height:0;min-width:0;position:relative;background:#222;display:flex;justify-content:center;align-items:center;padding:0;overflow:hidden;}
+body.fullscreen-mode #toolbar{display:none!important;}
+body.fullscreen-mode #pdf-container{width:100%;height:100%;background:#000;}
+body.fullscreen-mode #fs-controls{display:block!important;}
+.canvas-wrapper{position:relative;box-shadow:0 4px 15px rgba(0,0,0,0.5);background:#fff;max-width:100%;max-height:100%;display:flex;}
+canvas#the-canvas{display:block;max-width:100%;max-height:100%;object-fit:contain;pointer-events:none;}
+canvas#draw-canvas{position:absolute;top:0;left:0;width:100%;height:100%;touch-action:none;cursor:crosshair;pointer-events:none;}
+#hand-overlay{position:absolute;top:10px;left:10px;background:rgba(255,255,255,0.95);border:2px solid var(--color-hand);border-radius:20px;padding:8px 16px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:50;font-weight:700;color:#000;}
+#offline-indicator{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(100,100,100,0.95);color:#fff;border-radius:20px;padding:8px 16px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:250;font-weight:600;font-size:0.9rem;}
+.bounce{animation:bounce 0.5s infinite alternate;}
+@keyframes bounce{from{transform:translateY(0);}to{transform:translateY(-5px);}}
+.spin{animation:spin 1s linear infinite;}
+@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+.touch-zone{position:fixed;top:0;bottom:80px;width:15%;z-index:10;}
+#zone-prev{left:0;}
+#zone-next{right:0;}
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:300;justify-content:center;align-items:center;flex-direction:column;padding:15px;}
+.modal-content{background:#fff;padding:1.5rem;border-radius:1.5rem;box-shadow:var(--shadow);border:2px solid var(--color-attention-med);display:flex;flex-direction:column;align-items:center;text-align:center;max-width:92%;width:440px;}
+#toolbar{width:100%;height:auto;min-height:var(--toolbar-size);flex:0 0 auto;padding-bottom:env(safe-area-inset-bottom);background-color:var(--color-attention-med);display:flex;justify-content:center;align-items:center;gap:2px;box-shadow:0 -4px 15px rgba(0,0,0,0.2);z-index:50;position:relative;}
+@media (orientation:landscape){
+body{flex-direction:row;}
+#toolbar{width:var(--toolbar-size);height:100%;flex:0 0 var(--toolbar-size);flex-direction:column;box-shadow:-4px 0 15px rgba(0,0,0,0.2);padding-bottom:0;padding-right:env(safe-area-inset-right);min-height:0;}
+#page-info{transform:rotate(var(--landscape-rotation));margin:5px 0;}
+.tool-btn{width:100%;height:auto;min-height:50px;}
+}
+#page-info{color:#fff;font-size:1rem;font-weight:600;min-width:45px;text-align:center;white-space:nowrap;margin:0 2px;transition:transform 0.3s ease;transform:rotate(var(--landscape-rotation));}
+.tool-btn{background:none;border:none;color:#fff;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;flex-shrink:1;min-width:44px;height:100%;position:relative;}
+.tool-btn:active .btn-inner{background-color:rgba(255,255,255,0.2);border-radius:8px;}
+.btn-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;transition:transform 0.3s ease;width:100%;height:100%;position:relative;transform:rotate(var(--landscape-rotation));}
+.btn-inner span{font-size:0.65rem;margin-top:3px;font-weight:500;white-space:nowrap;}
+.tool-btn.danger{color:#ffcccc;}
+.hand-active .btn-inner{color:var(--color-hand)!important;background:rgba(255,255,255,0.1);border-radius:8px;}
+.hand-active i{fill:var(--color-hand);}
+.hand-timer-svg{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%) rotate(-90deg);width:36px;height:36px;pointer-events:none;display:none;z-index:0;transition:top 0.2s;}
+#fs-hand .hand-timer-svg{top:50%;width:60px;height:60px;}
+.hand-active .hand-timer-svg,.fs-btn-active .hand-timer-svg{display:block;}
+#btn-hand.hand-active span{display:none;}
+#btn-hand.hand-active .hand-timer-svg{top:50%;}
+.hand-timer-path{fill:none;stroke:var(--color-hand);stroke-width:3;stroke-dasharray:100,100;stroke-dashoffset:0;}
+.hand-active .hand-timer-path,.fs-btn-active .hand-timer-path{animation:timeCircle 10s linear forwards;}
+@keyframes timeCircle{0%{stroke-dashoffset:0;}100%{stroke-dashoffset:100;}}
+#fs-controls{display:none;position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:150;}
+#fs-exit,#fs-hand,#fs-page-info{pointer-events:auto;transition:transform 0.3s ease;}
+#fs-exit{position:absolute;top:20px;right:20px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;transform:rotate(var(--landscape-rotation));}
+#fs-page-info{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.6);color:#fff;padding:8px 16px;border-radius:20px;font-weight:700;font-size:0.9rem;transform:rotate(var(--landscape-rotation));origin:center;}
+#fs-hand{position:absolute;bottom:30px;right:20px;background:#fff;color:#aaa;border:2px solid #ccc;border-radius:50%;width:64px;height:64px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.3);transform:rotate(var(--landscape-rotation));}
+#fs-hand:active{transform:scale(0.95);}
+.fs-btn-active{background-color:var(--color-hand)!important;color:#fff!important;border:none!important;}
+.id-display{font-size:1.4rem;font-weight:800;color:var(--color-attention-med);background:#f0f8ff;padding:4px 8px;border-radius:10px;border:2px dashed var(--color-attention-med);letter-spacing:2px;user-select:text;flex-shrink:0;}
+.id-label{font-size:0.7rem;text-transform:uppercase;color:#666;font-weight:700;}
+.badge{padding:2px 6px;border-radius:10px;font-size:0.7rem;font-weight:700;}
+.badge-ok{background:#e8f5e9;color:var(--color-success);}
+.badge-warn{background:#ffebee;color:var(--color-error);}
+.badge-wait{background:#fff3e0;color:#e65100;}
+</style>
+</head>
+<body>
+<canvas id="forensic-watermark"></canvas>
+<div id="drm-curtain" class="hidden">
+    <i data-lucide="shield-alert"></i>
+    <h2>DRM ЗАХИСТ ВМІСТУ АКТИВОВАНО</h2>
+    <p id="drm-curtain-msg">Екран затемнено через спробу створення скріншота, запису екрана або перемикання вікна. Порушення зафіксовано в системі викладача.</p>
+    <button class="btn-primary" style="max-width: 280px;" onclick="dismissDrmCurtain()">
+        ПОВЕРНУТИСЯ ДО ТЕСТУ
+    </button>
+</div>
+<div id="student-share-panel" class="hidden">
+    <div class="share-panel-header">
+        <span class="share-panel-title">
+            <i data-lucide="share-2" style="width:14px;height:14px;color:var(--color-attention-med);"></i>
+            Швидке приєднання
+        </span>
+        <span class="badge badge-ok" style="font-size: 0.65rem;">Іспит Онлайн</span>
+    </div>
+    <div class="share-panel-body">
+        <div id="student-qr-container"></div>
+        <div class="share-panel-info">
+            <span class="id-label" style="font-size:0.65rem;">Код сесії:</span>
+            <div id="student-share-id-display" class="id-display" style="font-size: 1.05rem; padding: 2px 6px; letter-spacing: 1px;">...</div>
+            <div class="icon-btn-group" style="margin-top: 4px; gap: 4px; width: 100%;">
+                <button class="icon-btn" id="btn-st-copy-id" style="flex:1; justify-content:center; padding: 4px 6px; font-size:0.72rem;" onclick="copyId()">
+                    <i data-lucide="copy" style="width:13px;height:13px;"></i> Копія
+                </button>
+                <button class="icon-btn" style="flex:1; justify-content:center; padding: 4px 6px; font-size:0.72rem;" onclick="shareId()">
+                    <i data-lucide="share-2" style="width:13px;height:13px;"></i> Надіслати
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="ui-layer">
+    <div id="role-menu">
+        <button class="role-btn role-listener" onclick="setupListener()">
+            <div class="btn-inner">
+                <i data-lucide="graduation-cap" width="72" height="72"></i>
+                Я СТУДЕНТ
+            </div>
+        </button>
+        <button class="role-btn role-speaker" onclick="startTeacherAccess()">
+            <div class="btn-inner">
+                <i data-lucide="shield-check" width="72" height="72"></i>
+                Я ВИКЛАДАЧ
+            </div>
+        </button>
+    </div>
+    <div id="listener-menu" class="card hidden">
+        <h3>Підключення до сесії</h3>
+        <p class="card-desc">Відскануйте QR екзамену або введіть 7-значний код</p>
+        <div id="reader"></div> 
+        <div id="lock-ui-wrapper">
+            <input type="tel" id="ghost-input" maxlength="8" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+            <div class="lock-arrow-row">
+                <div class="lock-arrow-group">
+                    <div class="arrow-icon" onclick="changeDigit(0, 1)"><i data-lucide="chevron-up"></i></div>
+                    <div class="arrow-icon" onclick="changeDigit(1, 1)"><i data-lucide="chevron-up"></i></div>
+                    <div class="arrow-icon" onclick="changeDigit(2, 1)"><i data-lucide="chevron-up"></i></div>
+                </div>
+                <div class="lock-arrow-spacer"></div>
+                <div class="lock-arrow-group">
+                    <div class="arrow-icon" onclick="changeDigit(3, 1)"><i data-lucide="chevron-up"></i></div>
+                    <div class="arrow-icon" onclick="changeDigit(4, 1)"><i data-lucide="chevron-up"></i></div>
+                    <div class="arrow-icon" onclick="changeDigit(5, 1)"><i data-lucide="chevron-up"></i></div>
+                    <div class="arrow-icon" onclick="changeDigit(6, 1)"><i data-lucide="chevron-up"></i></div>
+                </div>
+            </div>
+            <div id="lock-container" onclick="triggerKeyboard()">
+                <div class="lock-group">
+                    <div class="lock-roller" id="d0"><span>0</span></div>
+                    <div class="lock-roller" id="d1"><span>0</span></div>
+                    <div class="lock-roller" id="d2"><span>0</span></div>
+                </div>
+                <div class="lock-spacer">-</div>
+                <div class="lock-group">
+                    <div class="lock-roller" id="d3"><span>0</span></div>
+                    <div class="lock-roller" id="d4"><span>0</span></div>
+                    <div class="lock-roller" id="d5"><span>0</span></div>
+                    <div class="lock-roller" id="d6"><span>0</span></div>
+                </div>
+            </div>
+            <div class="lock-arrow-row">
+                <div class="lock-arrow-group">
+                    <div class="arrow-icon" onclick="changeDigit(0, -1)"><i data-lucide="chevron-down"></i></div>
+                    <div class="arrow-icon" onclick="changeDigit(1, -1)"><i data-lucide="chevron-down"></i></div>
+                    <div class="arrow-icon" onclick="changeDigit(2, -1)"><i data-lucide="chevron-down"></i></div>
+                </div>
+                <div class="lock-arrow-spacer"></div>
+                <div class="lock-arrow-group">
+                    <div class="arrow-icon" onclick="changeDigit(3, -1)"><i data-lucide="chevron-down"></i></div>
+                    <div class="arrow-icon" onclick="changeDigit(4, -1)"><i data-lucide="chevron-down"></i></div>
+                    <div class="arrow-icon" onclick="changeDigit(5, -1)"><i data-lucide="chevron-down"></i></div>
+                    <div class="arrow-icon" onclick="changeDigit(6, -1)"><i data-lucide="chevron-down"></i></div>
+                </div>
+            </div>
+        </div>
+        <div id="onscreen-keypad">
+            <button type="button" class="keypad-btn" onclick="keypadInput(1)">1</button>
+            <button type="button" class="keypad-btn" onclick="keypadInput(2)">2</button>
+            <button type="button" class="keypad-btn" onclick="keypadInput(3)">3</button>
+            <button type="button" class="keypad-btn" onclick="keypadInput(4)">4</button>
+            <button type="button" class="keypad-btn" onclick="keypadInput(5)">5</button>
+            <button type="button" class="keypad-btn" onclick="keypadInput(6)">6</button>
+            <button type="button" class="keypad-btn" onclick="keypadInput(7)">7</button>
+            <button type="button" class="keypad-btn" onclick="keypadInput(8)">8</button>
+            <button type="button" class="keypad-btn" onclick="keypadInput(9)">9</button>
+            <button type="button" class="keypad-btn keypad-fn keypad-clear" onclick="keypadClear()" title="Очистити">C</button>
+            <button type="button" class="keypad-btn" onclick="keypadInput(0)">0</button>
+            <button type="button" class="keypad-btn keypad-fn" onclick="keypadBackspace()" title="Стерти"><i data-lucide="delete" width="18" height="18"></i></button>
+        </div>
+        <div style="width: 100%; display:flex; justify-content: center;">
+            <button class="icon-btn" onclick="pasteId()">
+                <i data-lucide="clipboard-paste"></i> Вставити код з буферу
+            </button>
+        </div>
+        <div class="action-bar">
+            <button class="btn-secondary" onclick="restartSession()">
+                <i data-lucide="arrow-left" width="24" height="24"></i>
+            </button>
+            <button class="btn-primary" onclick="joinExamSession()">
+                <i data-lucide="arrow-right" width="28" height="28"></i>
+            </button>
+        </div>
+    </div>
+    <div id="student-identity-menu" class="card hidden">
+        <i data-lucide="user-check" width="48" height="48" style="color: var(--color-attention-high);"></i>
+        <h3>Ідентифікація студента</h3>
+        <p class="card-desc">Оберіть своє прізвище зі списку групи. Воно закріпиться за вами на весь іспит.</p>
+        <div style="width: 100%; text-align: left; margin: 8px 0;">
+            <label style="font-size: 0.75rem; font-weight:700; color: #555;">Оберіть себе зі списку:</label>
+            <select id="student-select">
+                <option value="" disabled selected>-- Оберіть своє прізвище зі списку --</option>
+            </select>
+        </div>
+        <div style="font-size: 0.75rem; color: #666; background: #fff8e1; border: 1px solid #ffe082; padding: 8px; border-radius: 8px; line-height: 1.3;">
+            🔒 <b>DRM та E2EE захист:</b> Зв'язок надійно зашифровано (AES-256-GCM). Екран захищено від скріншотів, копіювання тексту та сторонніх розширень.
+        </div>
+        <div class="action-bar" style="margin-top: 10px;">
+            <button class="btn-secondary" onclick="restartSession()">
+                <i data-lucide="arrow-left" width="24" height="24"></i>
+            </button>
+            <button class="btn-primary" onclick="confirmStudentIdentity()">
+                ПІДТВЕРДИТИ
+            </button>
+        </div>
+    </div>
+    <div id="student-task-card" class="card hidden" style="border-color: var(--color-attention-med);">
+        <div style="display:flex; justify-content: space-between; align-items:center; width: 100%;">
+            <div style="display: flex; gap: 6px; align-items: center;">
+                <span id="st-status-badge" class="badge badge-ok">Закріплено</span>
+                <span id="st-timer-badge" class="badge badge-warn hidden">⏳ 20с</span>
+            </div>
+            <span id="st-badge-name" style="font-weight: 700; font-size: 0.85rem; color: var(--color-attention-med);"></span>
+        </div>
+        <h3 style="margin-top: 6px;">Ваше персональне завдання</h3>
+        <div class="task-canvas-wrapper" style="min-height: 120px;">
+            <canvas id="st-task-canvas" width="400" height="130"></canvas>
+        </div>
+        <div style="font-size: 0.75rem; color: #666; text-align: left; width: 100%;">
+            Виконуйте на чистовику. Запис екрана та копіювання заблоковано апаратним DRM.
+        </div>
+        <div class="action-bar" style="margin-top: 8px;">
+            <button class="btn-secondary" onclick="restartSession()" title="Вийти з кімнати">
+                <i data-lucide="arrow-left" width="24" height="24"></i>
+            </button>
+            <button class="btn-primary" id="btn-student-task-resync" onclick="triggerStudentTaskRefresh()">
+                <i data-lucide="refresh-cw" width="20" height="20"></i> ОНОВИТИ
+            </button>
+        </div>
+    </div>
+    <div id="speaker-menu" class="card hidden">
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; border-bottom: 1px solid #eee; padding-bottom: 6px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="layout-grid" style="color: var(--color-attention-med);"></i>
+                <h3 id="speaker-panel-title" style="font-size: 1.1rem;">Панель Керування Іспитом</h3>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span id="mobile-teacher-online-badge" class="badge badge-ok mobile-only-badge">0 онлайн</span>
+                <span class="badge badge-ok">Викладач</span>
+            </div>
+        </div>
+        <div class="speaker-dashboard">
+            <div class="speaker-left-col">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%;">
+                    <div id="qr-container"></div>
+                    <span id="speaker-id-label" class="id-label">Код екзамену</span>
+                    <div id="meeting-id-display" class="id-display">...</div>
+                    <div class="icon-btn-group">
+                        <button class="icon-btn" id="btn-copy-id" onclick="copyId()"><i data-lucide="copy"></i> Копія</button>
+                        <button class="icon-btn" onclick="shareId()"><i data-lucide="share-2"></i> Надіслати</button>
+                    </div>
+                </div>
+                <div class="exam-only" style="width: 100%; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 5px 8px; border-radius: 8px; margin-top: 2px;">
+                    <span style="font-size: 0.73rem; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="timer" style="width:14px;height:14px;color:var(--color-attention-med);"></i>
+                        Автотаймер 20с:
+                    </span>
+                    <label style="position: relative; display: inline-block; width: 36px; height: 18px; margin: 0; cursor: pointer;">
+                        <input type="checkbox" id="timer-toggle-cb" checked onchange="toggleAutoTimer(this.checked)" style="opacity: 0; width: 0; height: 0;">
+                        <span id="timer-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--color-attention-med); transition: .2s; border-radius: 20px;"></span>
+                        <span id="timer-knob" style="position: absolute; height: 12px; width: 12px; left: 20px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%;"></span>
+                    </label>
+                </div>
+                <div class="exam-only" style="width: 100%; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 5px 8px; border-radius: 8px;">
+                    <span style="font-size: 0.73rem; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="layers" style="width:14px;height:14px;color:var(--color-attention-med);"></i>
+                        Одночасно декілька:
+                    </span>
+                    <label style="position: relative; display: inline-block; width: 36px; height: 18px; margin: 0; cursor: pointer;">
+                        <input type="checkbox" id="multi-active-cb" onchange="toggleMultiActive(this.checked)" style="opacity: 0; width: 0; height: 0;">
+                        <span id="multi-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .2s; border-radius: 20px;"></span>
+                        <span id="multi-knob" style="position: absolute; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%;"></span>
+                    </label>
+                </div>
+                <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 5px 8px; border-radius: 8px;">
+                    <span style="font-size: 0.73rem; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="globe" style="width:14px;height:14px;color:var(--color-attention-med);"></i>
+                        Проксі science.knu.ua:
+                    </span>
+                    <label style="position: relative; display: inline-block; width: 36px; height: 18px; margin: 0; cursor: pointer;">
+                        <input type="checkbox" id="proxy-toggle-cb" checked onchange="toggleProxyMode(this.checked)" style="opacity: 0; width: 0; height: 0;">
+                        <span id="proxy-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--color-attention-med); transition: .2s; border-radius: 20px;"></span>
+                        <span id="proxy-knob" style="position: absolute; height: 12px; width: 12px; left: 20px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%;"></span>
+                    </label>
+                </div>
+                <div style="width: 100%; margin-top: 2px; text-align: left;">
+                    <label style="font-size: 0.73rem; font-weight: 700; color: #444; display: block; margin-bottom: 4px;">Презентації з Google Drive:</label>
+                    <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
+                        <select id="drive-files-select" onchange="onDriveFileSelected(this.value)" style="flex: 1; min-width: 0; font-size: 0.82rem; padding: 0.45rem;">
+                            <option value="">-- Завантаження з Google Drive... --</option>
+                        </select>
+                        <button type="button" class="icon-btn" id="btn-refresh-drive" onclick="loadDriveFolderPresentations(true)" title="Оновити список презентацій з Google Drive" style="padding: 8px; flex-shrink: 0; margin: 0;">
+                            <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
+                        </button>
+                    </div>
+                    <label style="font-size: 0.73rem; font-weight: 700; color: #444; display: block; margin-bottom: 2px;">Або власне посилання (PDF / Презентація):</label>
+                    <input type="text" id="gdrive-input" oninput="onGdriveManualInput()" placeholder="URL завдань (PDF / Google Docs / Slides)">
+                    <div id="sync-status" style="display:none; color: var(--color-attention-high); font-weight:700; font-size: 0.75rem; margin-top: 2px;">
+                        <i data-lucide="loader-2" class="spin"></i> Завантаження...
+                    </div>
+                </div>
+                <div class="action-bar" style="margin-top: auto;">
+                    <button class="btn-secondary" onclick="restartSession()"><i data-lucide="arrow-left" width="20"></i></button>
+                    <button id="btn-start-sync" onclick="startDistribution()" class="btn-primary" disabled>
+                        ТРАНСЛЯЦІЯ ДЛЯ ВСІХ
+                    </button>
+                </div>
+            </div>
+            <div class="speaker-right-col exam-only">
+                <div class="matrix-wrapper">
+                    <div class="matrix-toolbar">
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-size: 0.85rem; font-weight: 700; color: #333;">МАТРИЦЯ СТУДЕНТІВ:</span>
+                            <span id="speaker-user-count" class="badge badge-ok">0 онлайн</span>
+                            <span id="matrix-active-count" class="badge badge-wait">0 активно</span>
+                            <span id="matrix-total-count" class="badge" style="background:#e2e8f0; color:#334155;">Всього: 0</span>
+                        </div>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <button class="btn-add-card" onclick="addStudentCard('', '')">
+                                <i data-lucide="plus" style="width:14px;height:14px;"></i> Додати картку
+                            </button>
+                            <button class="icon-btn" onclick="openImportModal()" title="Швидка вставка списку">
+                                <i data-lucide="file-text"></i> Імпорт
+                            </button>
+                            <button class="icon-btn" onclick="activateAllTasks(true)"><i data-lucide="play"></i> Всім</button>
+                            <button class="icon-btn" onclick="activateAllTasks(false)"><i data-lucide="square"></i> Зупинити всі</button>
+                            <button class="icon-btn btn-danger-action" onclick="deleteAllCards()" title="Видалити всіх студентів та очистити матрицю">
+                                <i data-lucide="trash-2"></i> Видалити всіх
+                            </button>
+                        </div>
+                    </div>
+                    <div class="matrix-grid" id="teacher-matrix-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="loading-menu" class="card hidden" style="justify-content: center; border-color: var(--color-attention-med);">
+        <i data-lucide="loader-2" class="spin" style="color: var(--color-attention-med); width:56px; height:56px;"></i>
+        <h3 id="loading-msg" style="margin-top: 15px; line-height: 1.4;">З'єднання...</h3>
+        <button class="btn-secondary" onclick="restartSession()" style="margin-top: 15px; border-color: #ccc; color: #666; width: auto; gap: 6px;">
+            <i data-lucide="arrow-left"></i> ВИЙТИ
+        </button>
+    </div>
+</div>
+<div id="import-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 520px; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
+            <h3 style="color: var(--color-attention-med);">Імпорт списку студентів</h3>
+            <span class="badge badge-ok">Швидке додавання</span>
+        </div>
+        <p class="card-desc" style="margin-bottom: 8px;">Вставте рядки у форматі <code>ПІБ | Завдання</code> або просто список ПІБ:</p>
+        <textarea id="import-modal-text" style="width: 100%; height: 160px; font-family: monospace;" placeholder="Іванов Іван | Білет №1&#10;Петров Петро | Білет №2&#10;Сидоренко Ганна"></textarea>
+        <div class="action-bar" style="margin-top: 12px;">
+            <button class="btn-secondary" onclick="closeImportModal()">СКАСУВАТИ</button>
+            <button class="btn-primary" onclick="applyBulkImport()">СТВОРИТИ КАРТКИ</button>
+        </div>
+    </div>
+</div>
+<div id="task-modal" class="modal-overlay" onclick="toggleTaskModal()">
+    <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 500px; text-align: left;">
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:8px;">
+            <div style="display:flex; gap:6px; align-items:center;">
+                <h3 style="color: var(--color-attention-med);">Моє завдання</h3>
+                <span id="modal-timer-badge" class="badge badge-warn hidden">⏳ 20с</span>
+            </div>
+            <span id="modal-status-badge" class="badge badge-ok">Активовано</span>
+        </div>
+        <div class="task-canvas-wrapper" style="min-height: 120px; max-height: 250px; overflow-y: auto;">
+            <canvas id="modal-task-canvas" width="400" height="140"></canvas>
+        </div>
+        <button class="btn-secondary" style="margin-top:15px; width: 100%;" onclick="toggleTaskModal()">ЗАКРИТИ</button>
+    </div>
+</div>
+<div id="offline-indicator" class="hidden">
+    <i data-lucide="wifi-off" width="20" height="20"></i>
+    <span>Одиночний режим</span>
+</div>
+<div id="qr-modal" class="modal-overlay" onclick="toggleQR()">
+    <div id="qr-code-box" class="modal-content" onclick="event.stopPropagation()">
+        <h3 style="margin-bottom: 15px;">Код екзамену (Стор. <span id="qr-page-num">1</span>)</h3>
+        <div id="qrcode-modal-tgt"></div>
+        <div id="qr-modal-id" class="id-display" style="font-size:1.5rem; margin-top:15px;"></div>
+        <div class="icon-btn-group" style="margin-top: 15px;">
+            <button class="icon-btn" onclick="copyId()"><i data-lucide="copy"></i> Копіювати</button>
+            <button class="icon-btn" onclick="shareId()"><i data-lucide="share-2"></i> Надіслати</button>
+        </div>
+        <button class="btn-secondary" style="margin-top:20px;" onclick="toggleQR()">ЗАКРИТИ</button>
+    </div>
+</div>
+<div id="roster-modal" class="modal-overlay" onclick="toggleRosterModal()">
+    <div class="modal-content" onclick="event.stopPropagation()" style="max-height: 80vh; overflow-y: auto;">
+        <h3>Журнал студентів</h3>
+        <div class="roster-card" id="modal-roster-list" style="max-height: 350px; margin: 15px 0;"></div>
+        <button class="btn-secondary" onclick="toggleRosterModal()">ЗАКРИТИ</button>
+    </div>
+</div>
+<div id="notification-modal" class="modal-overlay" onclick="closeNotification()">
+    <div class="modal-content" onclick="event.stopPropagation()" style="border-color: var(--color-attention-high);">
+        <i data-lucide="alert-circle" width="56" height="56" style="color: var(--color-attention-high); margin-bottom: 10px;"></i>
+        <h3 id="notif-title" style="color: var(--color-attention-high);">Увага</h3>
+        <p id="notif-body" style="margin: 15px 0; font-weight: 500;">...</p>
+        <button class="btn-primary" style="margin-top: 10px;" onclick="closeNotification()">ЗРОЗУМІЛО</button>
+    </div>
+</div>
+<div id="zone-prev" class="touch-zone" onclick="onPrevPage()"></div>
+<div id="zone-next" class="touch-zone" onclick="onNextPage()"></div>
+<div id="fs-controls">
+    <div id="fs-page-info"><span id="fs_page_num">--</span> / <span id="fs_page_count">--</span></div>
+    <button id="fs-exit" onclick="exitFullScreen()"><i data-lucide="minimize" width="24" height="24"></i></button>
+    <button id="fs-hand" onclick="toggleHand()">
+        <svg class="hand-timer-svg" viewBox="0 0 36 36">
+            <path class="hand-timer-path" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+        </svg>
+        <i data-lucide="hand" width="32" height="32"></i>
+    </button>
+</div>
+<div id="pdf-container">
+    <div id="hand-overlay" class="hidden bounce">
+        <i data-lucide="hand" width="24" height="24" fill="#f59e0b" stroke="none"></i>
+        <span id="hand-count">0</span>
+    </div>
+    <div class="canvas-wrapper">
+        <canvas id="the-canvas"></canvas>
+        <canvas id="draw-canvas"></canvas>
+    </div>
+</div>
+<div id="toolbar">
+    <button class="tool-btn spk-only hidden" onclick="toggleQR()">
+        <div class="btn-inner"><i data-lucide="qr-code" width="24" height="24"></i><span>QR</span></div>
+    </button>
+    <button class="tool-btn spk-only exam-only hidden" onclick="toggleRosterModal()">
+        <div class="btn-inner"><i data-lucide="users" width="24" height="24"></i><span id="user-count-val">0</span></div>
+    </button>
+    <button class="tool-btn lst-only hidden" id="btn-hand" onclick="toggleHand()">
+        <div class="btn-inner">
+            <svg class="hand-timer-svg" viewBox="0 0 36 36">
+                <path class="hand-timer-path" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
+            <i data-lucide="hand" width="24" height="24"></i>
+            <span>Рука</span>
+        </div>
+    </button>
+    <button class="tool-btn lst-only hidden" onclick="triggerResync()">
+        <div class="btn-inner"><i data-lucide="refresh-cw" width="24" height="24"></i><span id="resync-text">Оновити</span></div>
+    </button>
+    <button class="tool-btn lst-only hidden" onclick="enterFullScreen()">
+        <div class="btn-inner"><i data-lucide="maximize" width="24" height="24"></i><span>Full</span></div>
+    </button>
+    <button class="tool-btn spk-only hidden" id="prev" onclick="onPrevPage()">
+        <div class="btn-inner"><i data-lucide="arrow-left" width="24" height="24"></i><span>Назад</span></div>
+    </button>
+    <div id="page-info"><span id="page_num">--</span> / <span id="page_count">--</span></div>
+    <button class="tool-btn spk-only hidden" id="next" onclick="onNextPage()">
+        <div class="btn-inner"><i data-lucide="arrow-right" width="24" height="24"></i><span>Далі</span></div>
+    </button>
+    <button class="tool-btn" id="rotate" onclick="onRotate()">
+        <div class="btn-inner"><i data-lucide="rotate-cw" width="24" height="24"></i><span>Оберт</span></div>
+    </button>
+    <button class="tool-btn danger spk-only hidden" id="eraser-btn" onclick="clearDrawings(true)">
+        <div class="btn-inner"><i data-lucide="eraser" width="24" height="24"></i><span>Стерти</span></div>
+    </button>
+    <button class="tool-btn danger" id="btn-exit-slides" onclick="restartSession()">
+        <div class="btn-inner"><i data-lucide="log-out" width="24" height="24"></i><span>Вийти</span></div>
+    </button>
+</div>
+<script>
+    const LANDSCAPE_ROTATION_DEG = 0; 
+    const APP_PREFIX = "exam_sync_";
+    const DEFAULT_DRIVE_FOLDER_ID = '1vcNnLPZ2B7VZvRlrf0NSEpPzBCilZfGr';
+    const DRIVE_FOLDER_EMBED_URL = 'https://drive.google.com/embeddedfolderview?id=' + DEFAULT_DRIVE_FOLDER_ID;
+    const PROXY_SERVER_URL = "https://science.knu.ua/sh/ow/me.php";
+    let pdfDoc = null, pageNum = 1, pageRendering = false, pageNumPending = null;
+    let rotation = 0;
+    const pdfCanvas = document.getElementById('the-canvas');
+    const pdfCtx = pdfCanvas.getContext('2d');
+    const drawCanvas = document.getElementById('draw-canvas');
+    const drawCtx = drawCanvas.getContext('2d');
+    const container = document.getElementById('pdf-container');
+    let peer = null;
+    let connections = [];
+    let isLeader = false;
+    let isPresentationOnly = false;
+    let examStarted = false;
+    let activeSourceUrl = null;
+    let driveFolderFiles = [];
+    let myIdRaw = null;
+    let currentHostId = null; 
+    let myHandRaised = false;
+    let hostConnection = null;
+    let handTimeout = null;
+    let isDrawing = false;
+    let lastX = 0, lastY = 0;
+    let pageMarks = {};
+    let studentCards = [];
+    let registeredStudents = [];
+    let studentTasks = {};
+    let activeStudentTasks = {};
+    let studentsApproved = false;
+    let studentClaims = {};
+    let studentViolations = {};
+    let myStudentName = "";
+    let myIndividualTask = "";
+    let isMyTaskActive = false;
+    let autoTimerEnabled = true;
+    let allowMultipleActive = false; 
+    let useProxy = true;
+    let cardTimers = {};
+    let studentCountdownInterval = null;
+    const lockDigits = [0,0,0,0,0,0,0];
+    let keypadCursor = 0;
+    let html5QrcodeScanner = null;
+    let watermarkInterval = null;
+    let watermarkResizeHandler = null;
+    let proxyPollTimer = null;
+    let proxyLastMsgId = 0;
+    let myProxyClientId = sessionStorage.getItem('examsync_peer_id') || ('st_' + Math.floor(Math.random()*899999999 + 100000000));
+    sessionStorage.setItem('examsync_peer_id', myProxyClientId);
+    let e2eeCryptoKey = null;
+    let proxySendQueue = [];
+    let isSendingProxy = false;
+    let isPollingProxy = false;
+    let claimRetryTimer = null;
+    let leaderKeepAliveInterval = null;
+    let studentPingInterval = null;
+    lucide.createIcons();
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    function isMobileDevice() {
+        const ua = navigator.userAgent || '';
+        const uaMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isSmallViewport = Math.min(window.innerWidth, window.innerHeight) < 768;
+        const isCoarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches && window.innerWidth < 1024;
+        return uaMobile || isSmallViewport || isCoarsePointer;
+    }
+    function firstFulfilled(promises) {
+        return new Promise((resolve, reject) => {
+            let failures = 0;
+            const total = promises.length;
+            if (total === 0) return reject(new Error('No promises'));
+            promises.forEach(p => {
+                Promise.resolve(p).then(resolve).catch(() => {
+                    failures++;
+                    if (failures === total) reject(new Error('All attempts failed'));
+                });
+            });
+        });
+    }
+    async function fetchTextViaCorsProxies(targetUrl) {
+        const cacheBustUrl = targetUrl.includes('?') ? `${targetUrl}&_cb=${Date.now()}` : `${targetUrl}?_cb=${Date.now()}`;
+        const encoded = encodeURIComponent(cacheBustUrl);
+        const endpoints = [
+            { url: `https://proxy.cors.dev/?url=${encoded}`, jsonWrap: false },
+            { url: `https://api.allorigins.win/raw?url=${encoded}`, jsonWrap: false },
+            { url: `https://api.allorigins.win/get?url=${encoded}`, jsonWrap: true },
+            { url: `https://api.codetabs.com/v1/proxy?quest=${encoded}`, jsonWrap: false },
+            { url: `https://api.cors.lol/?url=${encoded}`, jsonWrap: false }
+        ];
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
+        const attempts = endpoints.map(async (ep) => {
+            const resp = await fetch(ep.url, { signal: controller.signal });
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            let text = '';
+            if (ep.jsonWrap) {
+                const json = await resp.json();
+                text = json && json.contents ? json.contents : '';
+            } else {
+                text = await resp.text();
+            }
+            if (!text || (!text.includes('flip-') && !text.includes('entry-') && !text.includes('drive.google.com'))) {
+                throw new Error('Invalid Drive folder HTML');
+            }
+            return text;
+        });
+        try {
+            return await firstFulfilled(attempts);
+        } finally {
+            clearTimeout(timeoutId);
+            controller.abort();
+        }
+    }
+    async function fetchPdfBufferViaCorsProxies(targetUrl) {
+        const encoded = encodeURIComponent(targetUrl);
+        const proxyUrls = [
+            `https://proxy.cors.dev/?url=${encoded}`,
+            `https://api.allorigins.win/raw?url=${encoded}`,
+            `https://api.codetabs.com/v1/proxy?quest=${encoded}`,
+            `https://api.cors.lol/?url=${encoded}`
+        ];
+        for (const pUrl of proxyUrls) {
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), 15000);
+            try {
+                const resp = await fetch(pUrl, { signal: controller.signal });
+                clearTimeout(tid);
+                if (!resp.ok) continue;
+                const buf = await resp.arrayBuffer();
+                if (!buf || buf.byteLength < 8) continue;
+                const headTrimmed = new TextDecoder('ascii').decode(new Uint8Array(buf.slice(0, 1024))).trimStart();
+                if (!headTrimmed.startsWith('%PDF')) continue;
+                return new Uint8Array(buf);
+            } catch (err) {
+                clearTimeout(tid);
+            }
+        }
+        return null;
+    }
+    function parseEmbeddedFolderHtml(html) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const items = [];
+        const seenIds = new Set();
+        const entries = doc.querySelectorAll('.flip-entry, [id^="entry-"]');
+        entries.forEach(entry => {
+            const titleEl = entry.querySelector('.flip-entry-title');
+            const linkEl = entry.querySelector('a[href]');
+            const href = linkEl ? (linkEl.getAttribute('href') || '') : '';
+            const name = titleEl ? titleEl.textContent.trim() : (linkEl ? linkEl.textContent.trim() : '');
+            if (!name) return;
+            if (href.includes('/drive/folders/') || href.includes('/folderview')) return;
+            let fileId = '';
+            if (entry.id && entry.id.startsWith('entry-')) {
+                fileId = entry.id.substring(6).trim();
+            }
+            if (!fileId && href) {
+                const m1 = href.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                const m2 = href.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                fileId = (m1 && m1[1]) || (m2 && m2[1]) || '';
+            }
+            if (!fileId || seenIds.has(fileId)) return;
+            seenIds.add(fileId);
+            let resourceKey = '';
+            if (href) {
+                const rkMatch = href.match(/[?&]resourcekey=([a-zA-Z0-9_-]+)/i);
+                if (rkMatch) resourceKey = rkMatch[1];
+            }
+            let targetUrl = href || `https://drive.google.com/file/d/${fileId}/view`;
+            if (resourceKey && !targetUrl.includes('resourcekey=')) {
+                targetUrl += (targetUrl.includes('?') ? '&' : '?') + 'resourcekey=' + resourceKey;
+            }
+            items.push({ id: fileId, name: name, url: targetUrl });
+        });
+        if (items.length === 0) {
+            const blocks = html.split(/id="entry-/);
+            for (let i = 1; i < blocks.length; i++) {
+                const block = blocks[i];
+                const idMatch = block.match(/^([a-zA-Z0-9_-]+)"/);
+                const hrefMatch = block.match(/href="([^"]+)"/);
+                const titleMatch = block.match(/class="flip-entry-title"[^>]*>([^<]+)</);
+                if (idMatch && titleMatch) {
+                    const fileId = idMatch[1];
+                    const href = hrefMatch ? hrefMatch[1].replace(/&amp;/g, '&') : `https://drive.google.com/file/d/${fileId}/view`;
+                    const name = titleMatch[1].trim();
+                    if (!href.includes('/drive/folders/') && !href.includes('/folderview') && !seenIds.has(fileId)) {
+                        seenIds.add(fileId);
+                        items.push({ id: fileId, name: name, url: href });
+                    }
+                }
+            }
+        }
+        items.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+        return items;
+    }
+    async function loadDriveFolderPresentations(forceNotify = false) {
+        const select = document.getElementById('drive-files-select');
+        const refreshBtn = document.getElementById('btn-refresh-drive');
+        const refreshIcon = refreshBtn ? refreshBtn.querySelector('svg, i') : null;
+        if (refreshIcon) refreshIcon.classList.add('spin');
+        if (select) {
+            select.innerHTML = '<option value="">-- Завантаження з Google Drive... --</option>';
+        }
+        try {
+            const html = await fetchTextViaCorsProxies(DRIVE_FOLDER_EMBED_URL);
+            driveFolderFiles = parseEmbeddedFolderHtml(html);
+            if (!select) return;
+            if (driveFolderFiles.length === 0) {
+                select.innerHTML = '<option value="">-- Папка Google Drive порожня --</option>';
+                const customOpt = document.createElement('option');
+                customOpt.value = '__custom__';
+                customOpt.textContent = '-- Власне посилання (нижче) --';
+                select.appendChild(customOpt);
+                if (forceNotify) showNotification("У папці Google Drive не знайдено файлів.", false);
+                return;
+            }
+            select.innerHTML = '';
+            driveFolderFiles.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f.url;
+                opt.textContent = f.name;
+                select.appendChild(opt);
+            });
+            const customOpt = document.createElement('option');
+            customOpt.value = '__custom__';
+            customOpt.textContent = '-- Інше посилання (вказати нижче) --';
+            select.appendChild(customOpt);
+            const gdriveInput = document.getElementById('gdrive-input');
+            const currentManual = gdriveInput ? gdriveInput.value.trim() : '';
+            if (!currentManual || driveFolderFiles.some(f => f.url === currentManual)) {
+                const targetUrl = (currentManual && driveFolderFiles.some(f => f.url === currentManual))
+                    ? currentManual
+                    : driveFolderFiles[0].url;
+                select.value = targetUrl;
+                if (gdriveInput) gdriveInput.value = targetUrl;
+            } else {
+                select.value = '__custom__';
+            }
+            if (forceNotify) showNotification(`Завантажено файлів з Google Drive: ${driveFolderFiles.length}`, false);
+        } catch (err) {
+            if (select) {
+                select.innerHTML = '<option value="__custom__">-- Помилка списку Drive (введіть URL нижче) --</option>';
+            }
+            if (forceNotify) {
+                showNotification("Не вдалося завантажити список файлів з Google Drive. Перевірте доступ до папки або вставте URL вручну.", true);
+            }
+        } finally {
+            if (refreshIcon) refreshIcon.classList.remove('spin');
+        }
+    }
+    function onDriveFileSelected(val) {
+        const gdriveInput = document.getElementById('gdrive-input');
+        resetInputColor();
+        if (!val || val === '__custom__') {
+            if (gdriveInput && driveFolderFiles.some(f => f.url === gdriveInput.value.trim())) {
+                gdriveInput.value = '';
+            }
+            if (gdriveInput) gdriveInput.focus();
+            return;
+        }
+        if (gdriveInput) gdriveInput.value = val;
+    }
+    function onGdriveManualInput() {
+        resetInputColor();
+        const gdriveInput = document.getElementById('gdrive-input');
+        const select = document.getElementById('drive-files-select');
+        if (!gdriveInput || !select) return;
+        const val = gdriveInput.value.trim();
+        const match = driveFolderFiles.find(f => f.url === val);
+        if (match) {
+            select.value = match.url;
+        } else if (select.querySelector('option[value="__custom__"]')) {
+            select.value = '__custom__';
+        }
+    }
+    async function deriveE2EEKey(sessionCode) {
+        try {
+            const enc = new TextEncoder();
+            const keyMaterial = await window.crypto.subtle.importKey(
+                "raw",
+                enc.encode(sessionCode + "@ExamSync_KNU_2026_Salt"),
+                { name: "PBKDF2" },
+                false,
+                ["deriveKey"]
+            );
+            return await window.crypto.subtle.deriveKey(
+                {
+                    name: "PBKDF2",
+                    salt: enc.encode("science_knu_ua_salt_e2ee"),
+                    iterations: 20000,
+                    hash: "SHA-256"
+                },
+                keyMaterial,
+                { name: "AES-GCM", length: 256 },
+                false,
+                ["encrypt", "decrypt"]
+            );
+        } catch(e) {
+            return null;
+        }
+    }
+    async function encryptPayload(obj) {
+        if (!e2eeCryptoKey) return JSON.stringify(obj);
+        try {
+            const enc = new TextEncoder();
+            const iv = window.crypto.getRandomValues(new Uint8Array(12));
+            const plainStr = JSON.stringify(obj);
+            const cipherBuffer = await window.crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv },
+                e2eeCryptoKey,
+                enc.encode(plainStr)
+            );
+            const combined = new Uint8Array(iv.length + cipherBuffer.byteLength);
+            combined.set(iv, 0);
+            combined.set(new Uint8Array(cipherBuffer), iv.length);
+            let binary = '';
+            for (let i = 0; i < combined.byteLength; i++) {
+                binary += String.fromCharCode(combined[i]);
+            }
+            return "ENC:" + btoa(binary);
+        } catch (e) {
+            return JSON.stringify(obj);
+        }
+    }
+    async function decryptPayload(payloadStr) {
+        if (typeof payloadStr !== 'string' || !payloadStr.startsWith("ENC:")) {
+            try {
+                return typeof payloadStr === 'string' ? JSON.parse(payloadStr) : payloadStr;
+            } catch(e) {
+                return payloadStr;
+            }
+        }
+        if (!e2eeCryptoKey) return null;
+        try {
+            const rawB64 = payloadStr.substring(4);
+            const binary = atob(rawB64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            const iv = bytes.slice(0, 12);
+            const cipherData = bytes.slice(12);
+            const decryptedBuffer = await window.crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: iv },
+                e2eeCryptoKey,
+                cipherData
+            );
+            const dec = new TextDecoder();
+            return JSON.parse(dec.decode(decryptedBuffer));
+        } catch (e) {
+            return null;
+        }
+    }
+    async function postProxy(action, params = {}) {
+        const fd = new FormData();
+        fd.append('action', action);
+        for (const k in params) fd.append(k, params[k]);
+        try {
+            const resp = await fetch(PROXY_SERVER_URL, {
+                method: 'POST',
+                body: fd,
+                mode: 'cors'
+            });
+            if (!resp.ok) return null;
+            return await resp.json();
+        } catch(e) {
+            return null;
+        }
+    }
+    function sendViaProxy(sessionCode, senderId, recipientId, obj) {
+        return new Promise((resolve) => {
+            proxySendQueue.push({
+                session: sessionCode,
+                sender: senderId,
+                recipient: recipientId || 'all',
+                obj: obj,
+                resolve: resolve
+            });
+            processProxySendQueue();
+        });
+    }
+    async function processProxySendQueue() {
+        if (isSendingProxy || proxySendQueue.length === 0) return;
+        isSendingProxy = true;
+        const item = proxySendQueue.shift();
+        try {
+            const encrypted = await encryptPayload(item.obj);
+            const res = await postProxy('send', {
+                session: item.session,
+                sender: item.sender,
+                recipient: item.recipient,
+                payload: encrypted
+            });
+            if (item.resolve) item.resolve(res);
+        } catch(e) {
+            if (item.resolve) item.resolve(null);
+        } finally {
+            isSendingProxy = false;
+            if (proxySendQueue.length > 0) setTimeout(processProxySendQueue, 50);
+        }
+    }
+    function startProxyPolling(sessionCode, myPeerId, onMessageCallback) {
+        stopProxyPolling();
+        proxyLastMsgId = 0;
+        proxyPollTimer = setInterval(async () => {
+            if (!useProxy || isPollingProxy) return;
+            isPollingProxy = true;
+            try {
+                const res = await postProxy('poll', {
+                    session: sessionCode,
+                    peer_id: myPeerId,
+                    last_id: proxyLastMsgId
+                });
+                if (res && res.status === 'ok' && Array.isArray(res.messages)) {
+                    for (const msg of res.messages) {
+                        if (msg.id > proxyLastMsgId) proxyLastMsgId = msg.id;
+                        if (msg.sender !== myPeerId) {
+                            const decrypted = await decryptPayload(msg.payload);
+                            if (decrypted) onMessageCallback(decrypted, msg.sender);
+                        }
+                    }
+                }
+            } catch(e) {
+            } finally {
+                isPollingProxy = false;
+            }
+        }, 800);
+    }
+    function stopProxyPolling() {
+        if (proxyPollTimer) {
+            clearInterval(proxyPollTimer);
+            proxyPollTimer = null;
+        }
+    }
+    window.onload = () => {
+        document.documentElement.style.setProperty('--landscape-rotation', LANDSCAPE_ROTATION_DEG + 'deg');
+        const stored = localStorage.getItem('exam_students_data');
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    studentCards = parsed.map((item, idx) => ({
+                        id: item.id || ('st_' + Date.now() + '_' + idx),
+                        name: item.name || '',
+                        task: item.task || '',
+                        active: !!item.active
+                    }));
+                    syncCardStateToGlobals();
+                }
+            } catch(e) {}
+        }
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('p')) pageNum = parseInt(params.get('p')) || 1;
+        if (params.get('proxy') !== null) {
+            useProxy = (params.get('proxy') === '1');
+            const pcb = document.getElementById('proxy-toggle-cb');
+            if (pcb) pcb.checked = useProxy;
+        }
+        if (params.get('host')) {
+            document.getElementById('role-menu').classList.add('hidden');
+            joinExamSession(params.get('host'));
+        }
+        initDrawingListeners();
+        initLockInterface();
+        initManualInputListener();
+        initDrmGuards();
+        blockScreenRecordingAPIs();
+    };
+    function restartSession() {
+        if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+            try {
+                if (document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                else if (document.msExitFullscreen) document.msExitFullscreen();
+            } catch(e) {}
+        }
+        document.body.classList.remove('fullscreen-mode', 'drm-blackout', 'student-connected', 'mobile-teacher');
+        if (leaderKeepAliveInterval) { clearInterval(leaderKeepAliveInterval); leaderKeepAliveInterval = null; }
+        if (studentPingInterval) { clearInterval(studentPingInterval); studentPingInterval = null; }
+        if (claimRetryTimer) { clearInterval(claimRetryTimer); claimRetryTimer = null; }
+        if (handTimeout) { clearTimeout(handTimeout); handTimeout = null; }
+        if (watermarkInterval) { clearInterval(watermarkInterval); watermarkInterval = null; }
+        if (watermarkResizeHandler) { window.removeEventListener('resize', watermarkResizeHandler); watermarkResizeHandler = null; }
+        if (studentCountdownInterval) { clearInterval(studentCountdownInterval); studentCountdownInterval = null; }
+        Object.keys(cardTimers).forEach(id => clearCardTimer(id));
+        cardTimers = {};
+        stopProxyPolling();
+        proxySendQueue = [];
+        isSendingProxy = false;
+        isPollingProxy = false;
+        proxyLastMsgId = 0;
+        if (html5QrcodeScanner) {
+            const scannerRef = html5QrcodeScanner;
+            html5QrcodeScanner = null;
+            try { Promise.resolve(scannerRef.clear()).catch(() => {}); } catch(e) {}
+        }
+        const readerEl = document.getElementById('reader');
+        if (readerEl) readerEl.innerHTML = '';
+        if (hostConnection) {
+            try { hostConnection.close(); } catch(e) {}
+            hostConnection = null;
+        }
+        connections.forEach(c => {
+            if (c && c.conn) {
+                try { c.conn.close(); } catch(e) {}
+            }
+        });
+        connections = [];
+        if (peer) {
+            try { peer.destroy(); } catch(e) {}
+            peer = null;
+        }
+        if (pdfDoc) {
+            try { pdfDoc.destroy(); } catch(e) {}
+            pdfDoc = null;
+        }
+        pageNum = 1;
+        pageRendering = false;
+        pageNumPending = null;
+        rotation = 0;
+        document.documentElement.style.setProperty('--landscape-rotation', LANDSCAPE_ROTATION_DEG + 'deg');
+        pageMarks = {};
+        isDrawing = false;
+        lastX = 0;
+        lastY = 0;
+        pdfCtx.clearRect(0, 0, pdfCanvas.width, pdfCanvas.height);
+        drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+        pdfCanvas.width = 0; pdfCanvas.height = 0;
+        drawCanvas.width = 0; drawCanvas.height = 0;
+        drawCanvas.style.pointerEvents = 'none';
+        document.getElementById('page_num').textContent = '--';
+        document.getElementById('page_count').textContent = '--';
+        document.getElementById('fs_page_num').textContent = '--';
+        document.getElementById('fs_page_count').textContent = '--';
+        isLeader = false;
+        isPresentationOnly = false;
+        examStarted = false;
+        activeSourceUrl = null;
+        myIdRaw = null;
+        currentHostId = null;
+        e2eeCryptoKey = null;
+        myHandRaised = false;
+        studentClaims = {};
+        studentViolations = {};
+        myStudentName = "";
+        myIndividualTask = "";
+        isMyTaskActive = false;
+        studentCards.forEach(c => { c.active = false; });
+        syncCardStateToGlobals();
+        sessionStorage.removeItem('examsync_student_name');
+        myProxyClientId = 'st_' + Math.floor(Math.random()*899999999 + 100000000);
+        sessionStorage.setItem('examsync_peer_id', myProxyClientId);
+        try {
+            const cleanUrl = window.location.href.split('?')[0];
+            window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+        } catch(e) {}
+        document.getElementById('drm-curtain').classList.add('hidden');
+        document.getElementById('forensic-watermark').style.display = 'none';
+        document.getElementById('student-share-panel').classList.add('hidden');
+        document.getElementById('student-qr-container').innerHTML = '';
+        document.getElementById('student-share-id-display').innerText = '...';
+        document.getElementById('qr-container').innerHTML = '';
+        document.getElementById('qrcode-modal-tgt').innerHTML = '';
+        document.getElementById('meeting-id-display').innerText = '...';
+        document.getElementById('qr-modal-id').innerText = '';
+        document.getElementById('hand-overlay').classList.add('hidden');
+        document.getElementById('hand-count').innerText = '0';
+        document.getElementById('offline-indicator').classList.add('hidden');
+        document.getElementById('btn-hand').classList.remove('hand-active');
+        document.getElementById('fs-hand').classList.remove('fs-btn-active');
+        ['import-modal', 'task-modal', 'qr-modal', 'roster-modal', 'notification-modal'].forEach(mid => {
+            const m = document.getElementById(mid);
+            if (m) m.style.display = 'none';
+        });
+        document.getElementById('user-count-val').innerText = '0';
+        document.getElementById('speaker-user-count').innerText = '0 онлайн';
+        const mobileBadge = document.getElementById('mobile-teacher-online-badge');
+        if (mobileBadge) mobileBadge.innerText = '0 онлайн';
+        document.getElementById('speaker-panel-title').innerText = 'Панель Керування Іспитом';
+        document.getElementById('speaker-id-label').innerText = 'Код екзамену';
+        const startBtn = document.getElementById('btn-start-sync');
+        if (startBtn) {
+            startBtn.disabled = true;
+            startBtn.innerText = 'ТРАНСЛЯЦІЯ ДЛЯ ВСІХ';
+        }
+        document.getElementById('sync-status').style.display = 'none';
+        document.getElementById('gdrive-input').value = '';
+        resetInputColor();
+        const timerCb = document.getElementById('timer-toggle-cb');
+        if (timerCb) { timerCb.checked = true; toggleAutoTimer(true); }
+        const multiCb = document.getElementById('multi-active-cb');
+        if (multiCb) { multiCb.checked = false; toggleMultiActive(false); }
+        const proxyCb = document.getElementById('proxy-toggle-cb');
+        if (proxyCb) { proxyCb.checked = true; }
+        useProxy = true;
+        const proxyKnob = document.getElementById('proxy-knob');
+        const proxySlider = document.getElementById('proxy-slider');
+        if (proxyKnob && proxySlider) {
+            proxySlider.style.backgroundColor = 'var(--color-attention-med)';
+            proxyKnob.style.left = '20px';
+        }
+        updateStudentTimerUI(null);
+        resetLockCode();
+        ['listener-menu', 'student-identity-menu', 'student-task-card', 'speaker-menu', 'loading-menu'].forEach(cid => {
+            const card = document.getElementById(cid);
+            if (card) card.classList.add('hidden');
+        });
+        document.getElementById('role-menu').classList.remove('hidden');
+        document.getElementById('ui-layer').classList.remove('hidden');
+        updateToolbarForRole();
+        lucide.createIcons();
+    }
+    function isStudentActive() {
+        return !isLeader && (currentHostId !== null || myStudentName !== "" || isMyTaskActive || examStarted);
+    }
+    function blockScreenRecordingAPIs() {
+        if (navigator.mediaDevices) {
+            navigator.mediaDevices.getDisplayMedia = function() {
+                reportViolation("Спроба захоплення/запису екрана (getDisplayMedia)");
+                triggerDrmCurtain("Запис екрана суворо заборонено апаратним захистом DRM!");
+                return Promise.reject(new DOMException("Screen capture is prohibited by DRM policy", "NotAllowedError"));
+            };
+        }
+    }
+    function blackoutSensitiveContent() {
+        const stCanvas = document.getElementById('st-task-canvas');
+        if (stCanvas) {
+            const ctx = stCanvas.getContext('2d');
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, stCanvas.width, stCanvas.height);
+        }
+        const modalCanvas = document.getElementById('modal-task-canvas');
+        if (modalCanvas) {
+            const ctx = modalCanvas.getContext('2d');
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, modalCanvas.width, modalCanvas.height);
+        }
+        if (pdfCanvas) {
+            pdfCtx.fillStyle = '#000000';
+            pdfCtx.fillRect(0, 0, pdfCanvas.width, pdfCanvas.height);
+        }
+    }
+    function initDrmGuards() {
+        document.addEventListener('contextmenu', e => { e.preventDefault(); return false; });
+        document.addEventListener('copy', e => {
+            if (!isLeader) {
+                e.preventDefault();
+                scrubClipboard();
+                reportViolation("Спроба копіювання тексту");
+                triggerDrmCurtain("Копіювання матеріалів заборонено правилами іспиту!");
+            }
+        });
+        document.addEventListener('cut', e => { if (!isLeader) { e.preventDefault(); scrubClipboard(); } });
+        document.addEventListener('paste', e => { if (!isLeader && isStudentActive()) e.preventDefault(); });
+        document.addEventListener('dragstart', e => e.preventDefault());
+        document.addEventListener('drop', e => e.preventDefault());
+        document.addEventListener('selectstart', e => { if (!isLeader && isStudentActive()) e.preventDefault(); });
+        document.addEventListener('selectionchange', () => {
+            if (!isLeader && isStudentActive()) {
+                const sel = window.getSelection();
+                if (sel && sel.removeAllRanges) sel.removeAllRanges();
+            }
+        });
+        const interceptKey = (e) => {
+            if (isLeader || !isStudentActive()) return;
+            const key = (e.key || '').toLowerCase();
+            const code = (e.code || '').toLowerCase();
+            const isCtrlOrMeta = e.ctrlKey || e.metaKey;
+            const isPrintScreen = e.key === 'PrintScreen' || code === 'printscreen' || e.keyCode === 44 || e.which === 44;
+            const isMacScreenshot = e.metaKey && e.shiftKey;
+            const isDevTools = e.key === 'F12' || (isCtrlOrMeta && e.shiftKey && ['i','j','c','s'].includes(key));
+            const isSaveOrPrint = isCtrlOrMeta && ['p','s','u'].includes(key);
+            const isCopyCut = isCtrlOrMeta && ['c','x','a'].includes(key);
+            if (isPrintScreen || isMacScreenshot || isDevTools || isSaveOrPrint || isCopyCut) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                scrubClipboard();
+                blackoutSensitiveContent();
+                triggerDrmCurtain("Спроба знімка екрана або забороненої комбінації блокована!");
+                reportViolation("Заборонена комбінація / Скріншот: " + (e.key || e.keyCode));
+                return false;
+            }
+        };
+        window.addEventListener('keydown', interceptKey, true);
+        window.addEventListener('keyup', interceptKey, true);
+        window.addEventListener('blur', () => {
+            if (isStudentActive()) {
+                scrubClipboard();
+                blackoutSensitiveContent();
+                triggerDrmCurtain("Втрата фокусу екрана (можлива спроба скріншота або перемикання вікна)!");
+                reportViolation("Втрата фокусу вікна / Можливий скріншот (Blur)");
+            }
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && isStudentActive()) {
+                scrubClipboard();
+                blackoutSensitiveContent();
+                triggerDrmCurtain("Згортання або перемикання вкладки під час іспиту!");
+                reportViolation("Вкладку приховано (VisibilityChange)");
+            }
+        });
+        window.addEventListener('pagehide', () => { if (isStudentActive()) scrubClipboard(); });
+        window.addEventListener('beforeprint', (e) => {
+            e.preventDefault();
+            blackoutSensitiveContent();
+            triggerDrmCurtain("Друк матеріалів іспиту суворо заборонено!");
+            reportViolation("Спроба друку");
+        });
+        setInterval(() => { if (isStudentActive()) scrubClipboard(); }, 3000);
+    }
+    function scrubClipboard() {
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText('⚠️ [ExamSync DRM: Матеріали іспиту захищено від копіювання]').catch(()=>{});
+            }
+        } catch(e){}
+    }
+    function triggerDrmCurtain(msg) {
+        const curtain = document.getElementById('drm-curtain');
+        document.getElementById('drm-curtain-msg').innerText = msg;
+        curtain.classList.remove('hidden');
+        document.body.classList.add('drm-blackout');
+        blackoutSensitiveContent();
+    }
+    function dismissDrmCurtain() {
+        document.getElementById('drm-curtain').classList.add('hidden');
+        document.body.classList.remove('drm-blackout');
+        renderTaskToSecureCanvas('st-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
+        renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
+        if (pdfDoc && examStarted) renderPage(pageNum);
+    }
+    async function reportViolation(reason) {
+        const payload = {
+            type: 'VIOLATION',
+            student: myStudentName || "Невідомий студент",
+            reason: reason,
+            time: new Date().toLocaleTimeString()
+        };
+        if (useProxy && currentHostId) {
+            sendViaProxy(currentHostId, myProxyClientId, 'host', payload);
+        } else if (hostConnection && hostConnection.open) {
+            const enc = await encryptPayload(payload);
+            hostConnection.send(enc);
+        }
+    }
+    function startForensicWatermarking() {
+        const wmCanvas = document.getElementById('forensic-watermark');
+        wmCanvas.style.display = 'block';
+        if (watermarkInterval) clearInterval(watermarkInterval);
+        if (watermarkResizeHandler) window.removeEventListener('resize', watermarkResizeHandler);
+        function drawWatermark() {
+            if (isLeader || !isStudentActive()) {
+                wmCanvas.style.display = 'none';
+                return;
+            }
+            wmCanvas.style.display = 'block';
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const dpr = window.devicePixelRatio || 1;
+            wmCanvas.width = w * dpr;
+            wmCanvas.height = h * dpr;
+            const ctx = wmCanvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            ctx.clearRect(0, 0, w, h);
+            const timestamp = new Date().toLocaleTimeString();
+            const text = `ExamSync DRM • ${myStudentName || 'СТУДЕНТ'} • ID:${currentHostId ? formatId(currentHostId) : 'SYNC'} • ${timestamp}`;
+            ctx.save();
+            ctx.rotate(-22 * Math.PI / 180);
+            ctx.font = "700 13px 'Montserrat', sans-serif";
+            ctx.fillStyle = "rgba(180, 0, 0, 0.08)";
+            const stepX = 260;
+            const stepY = 80;
+            for (let x = -w; x < w * 2; x += stepX) {
+                for (let y = -h; y < h * 2; y += stepY) {
+                    ctx.fillText(text, x, y);
+                }
+            }
+            ctx.restore();
+        }
+        drawWatermark();
+        watermarkInterval = setInterval(drawWatermark, 1000);
+        watermarkResizeHandler = drawWatermark;
+        window.addEventListener('resize', watermarkResizeHandler);
+    }
+    function renderTaskToSecureCanvas(canvasId, text, studentName, isActive) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        const parentWidth = canvas.parentElement ? canvas.parentElement.clientWidth : 380;
+        const displayWidth = Math.max(300, parentWidth);
+        if (!isActive) {
+            canvas.width = displayWidth * dpr;
+            canvas.height = 90 * dpr;
+            canvas.style.width = displayWidth + 'px';
+            canvas.style.height = '90px';
+            ctx.scale(dpr, dpr);
+            ctx.fillStyle = '#fff5f5';
+            ctx.fillRect(0, 0, displayWidth, 90);
+            ctx.fillStyle = '#c62828';
+            ctx.font = "700 13px 'Montserrat', sans-serif";
+            ctx.textAlign = 'center';
+            ctx.fillText("ЗАВДАННЯ ОЧІКУЄ АКТИВАЦІЇ ВИКЛАДАЧЕМ", displayWidth / 2, 48);
+            return;
+        }
+        const baseFontSize = 14;
+        ctx.font = `600 ${baseFontSize}px 'Montserrat', sans-serif`;
+        const words = (text || "Очікування тексту завдання...").split(/\s+/);
+        const lines = [];
+        let curLine = '';
+        const maxTextWidth = displayWidth - 28;
+        for (let i = 0; i < words.length; i++) {
+            const testLine = curLine ? curLine + ' ' + words[i] : words[i];
+            if (ctx.measureText(testLine).width > maxTextWidth && curLine) {
+                lines.push(curLine);
+                curLine = words[i];
+            } else {
+                curLine = testLine;
+            }
+        }
+        if (curLine) lines.push(curLine);
+        const lineHeight = 22;
+        const totalHeight = Math.max(110, (lines.length * lineHeight) + 36);
+        canvas.width = displayWidth * dpr;
+        canvas.height = totalHeight * dpr;
+        canvas.style.width = displayWidth + 'px';
+        canvas.style.height = totalHeight + 'px';
+        ctx.scale(dpr, dpr);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, displayWidth, totalHeight);
+        ctx.save();
+        ctx.rotate(-12 * Math.PI / 180);
+        ctx.font = "700 11px 'Montserrat', sans-serif";
+        ctx.fillStyle = "rgba(11, 83, 148, 0.05)";
+        for (let x = -50; x < displayWidth + 100; x += 180) {
+            for (let y = -40; y < totalHeight + 100; y += 40) {
+                ctx.fillText(`PROTECTED • ${studentName || ''}`, x, y);
+            }
+        }
+        ctx.restore();
+        ctx.fillStyle = '#0f172a';
+        ctx.font = `600 ${baseFontSize}px 'Montserrat', sans-serif`;
+        ctx.textAlign = 'left';
+        let yPos = 28;
+        for (const line of lines) {
+            ctx.fillText(line, 14, yPos);
+            yPos += lineHeight;
+        }
+    }
+    function startTeacherAccess() {
+        document.getElementById('role-menu').classList.add('hidden');
+        initLeader();
+    }
+    function toggleAutoTimer(enabled) {
+        autoTimerEnabled = enabled;
+        const knob = document.getElementById('timer-knob');
+        const slider = document.getElementById('timer-slider');
+        if (knob && slider) {
+            slider.style.backgroundColor = enabled ? 'var(--color-attention-med)' : '#cbd5e1';
+            knob.style.left = enabled ? '20px' : '3px';
+        }
+        if (!enabled) {
+            Object.keys(cardTimers).forEach(id => clearCardTimer(id));
+            renderTeacherMatrix();
+        }
+    }
+    function toggleMultiActive(enabled) {
+        allowMultipleActive = enabled;
+        const knob = document.getElementById('multi-knob');
+        const slider = document.getElementById('multi-slider');
+        if (knob && slider) {
+            slider.style.backgroundColor = enabled ? 'var(--color-attention-med)' : '#cbd5e1';
+            knob.style.left = enabled ? '20px' : '3px';
+        }
+        if (!enabled) {
+            let keptOne = false;
+            studentCards.forEach(c => {
+                if (c.active) {
+                    if (!keptOne) keptOne = true;
+                    else deactivateSingleCard(c);
+                }
+            });
+            localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
+            renderTeacherMatrix();
+            broadcastState();
+        }
+    }
+    function toggleProxyMode(enabled) {
+        useProxy = enabled;
+        const knob = document.getElementById('proxy-knob');
+        const slider = document.getElementById('proxy-slider');
+        if (knob && slider) {
+            slider.style.backgroundColor = enabled ? 'var(--color-attention-med)' : '#cbd5e1';
+            knob.style.left = enabled ? '20px' : '3px';
+        }
+        if (isLeader) {
+            updateQRCodes();
+            if (enabled) {
+                if (myIdRaw) startProxyPolling(myIdRaw, 'host', handleLeaderIncomingMessage);
+                showNotification("Проксі science.knu.ua активовано (WAN/NAT доступ)", false);
+            } else {
+                stopProxyPolling();
+                showNotification("Локальний режим (тільки локальний P2P/LAN)", false);
+            }
+        }
+    }
+    function clearCardTimer(cardId) {
+        if (cardTimers[cardId]) {
+            clearInterval(cardTimers[cardId].interval);
+            delete cardTimers[cardId];
+        }
+    }
+    function activateSingleCard(card) {
+        card.active = true;
+        const stName = card.name.trim();
+        activeStudentTasks[stName] = true;
+        clearCardTimer(card.id);
+        if (autoTimerEnabled) {
+            cardTimers[card.id] = {
+                remaining: 20,
+                interval: setInterval(() => {
+                    if (!cardTimers[card.id]) return;
+                    cardTimers[card.id].remaining--;
+                    const badge = document.getElementById(`timer-badge-${card.id}`);
+                    if (badge) badge.innerText = `⏳ ${cardTimers[card.id].remaining}с`;
+                    if (cardTimers[card.id].remaining <= 0) {
+                        deactivateSingleCard(card);
+                        renderTeacherMatrix();
+                        broadcastState();
+                    }
+                }, 1000)
+            };
+        }
+        sendTaskToStudent(stName, autoTimerEnabled ? 20 : null);
+        broadcastState();
+    }
+    function deactivateSingleCard(card) {
+        card.active = false;
+        const stName = card.name.trim();
+        activeStudentTasks[stName] = false;
+        clearCardTimer(card.id);
+        sendTaskToStudent(stName, null);
+        broadcastState();
+    }
+    function syncCardStateToGlobals() {
+        registeredStudents = studentCards.map(c => c.name.trim()).filter(n => n.length > 0);
+        studentTasks = {};
+        activeStudentTasks = {};
+        studentCards.forEach(c => {
+            const n = c.name.trim();
+            if (n) {
+                studentTasks[n] = c.task || '';
+                activeStudentTasks[n] = !!c.active;
+            }
+        });
+        studentsApproved = registeredStudents.length > 0;
+        localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
+    }
+    function addStudentCard(name = "", task = "") {
+        const newId = 'st_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+        studentCards.push({
+            id: newId,
+            name: name,
+            task: task || `Білет №${studentCards.length + 1}`,
+            active: false
+        });
+        syncCardStateToGlobals();
+        broadcastState();
+        renderTeacherMatrix();
+        setTimeout(() => {
+            const el = document.getElementById(`name-input-${newId}`);
+            if (el) el.focus();
+        }, 50);
+    }
+    function deleteStudentCard(id) {
+        const card = studentCards.find(c => c.id === id);
+        if (!card) return;
+        clearCardTimer(id);
+        const stName = card.name.trim();
+        if (card.active && stName) deactivateSingleCard(card);
+        for (const peerId in studentClaims) {
+            if (studentClaims[peerId] === stName) delete studentClaims[peerId];
+        }
+        studentCards = studentCards.filter(c => c.id !== id);
+        syncCardStateToGlobals();
+        broadcastState();
+        renderTeacherMatrix();
+    }
+    function deleteAllCards() {
+        if (studentCards.length === 0) return;
+        if (!confirm("Ви впевнені, що хочете видалити ВСІ картки студентів?")) return;
+        studentCards.forEach(c => {
+            clearCardTimer(c.id);
+            const stName = c.name.trim();
+            if (c.active && stName) sendTaskToStudent(stName, null);
+        });
+        studentCards = [];
+        studentClaims = {};
+        studentViolations = {};
+        activeStudentTasks = {};
+        studentTasks = {};
+        syncCardStateToGlobals();
+        broadcastState();
+        renderTeacherMatrix();
+        showNotification("Всі картки студентів видалено.", false);
+    }
+    function updateCardName(id, newName) {
+        const card = studentCards.find(c => c.id === id);
+        if (!card) return;
+        const oldName = card.name.trim();
+        const trimmedNew = newName.trim();
+        if (oldName === trimmedNew) return;
+        for (const peerId in studentClaims) {
+            if (studentClaims[peerId] === oldName) studentClaims[peerId] = trimmedNew;
+        }
+        card.name = newName;
+        syncCardStateToGlobals();
+        broadcastState();
+        if (card.active && trimmedNew) sendTaskToStudent(trimmedNew, autoTimerEnabled ? 20 : null);
+        updateMatrixCounts();
+    }
+    function updateCardTask(id, newTask) {
+        const card = studentCards.find(c => c.id === id);
+        if (!card) return;
+        card.task = newTask;
+        const stName = card.name.trim();
+        if (stName) {
+            studentTasks[stName] = newTask;
+            if (card.active) {
+                const remaining = cardTimers[card.id] ? cardTimers[card.id].remaining : null;
+                sendTaskToStudent(stName, remaining);
+            }
+        }
+        localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
+        broadcastState();
+    }
+    function toggleCardActivation(id) {
+        const card = studentCards.find(c => c.id === id);
+        if (!card) return;
+        const stName = card.name.trim();
+        if (!stName) return showNotification("Введіть ПІБ студента перед активацією!", true);
+        if (card.active) {
+            deactivateSingleCard(card);
+        } else {
+            if (!allowMultipleActive) {
+                studentCards.forEach(c => {
+                    if (c.id !== card.id && c.active) deactivateSingleCard(c);
+                });
+            }
+            activateSingleCard(card);
+        }
+        localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
+        renderTeacherMatrix();
+    }
+    function activateAllTasks(state) {
+        if (state) {
+            toggleMultiActive(true);
+            const cb = document.getElementById('multi-active-cb');
+            if (cb) cb.checked = true;
+        }
+        studentCards.forEach(c => {
+            const stName = c.name.trim();
+            if (!stName) return;
+            if (state) activateSingleCard(c);
+            else deactivateSingleCard(c);
+        });
+        localStorage.setItem('exam_students_data', JSON.stringify(studentCards));
+        renderTeacherMatrix();
+        broadcastState();
+    }
+    function openImportModal() {
+        document.getElementById('import-modal-text').value = '';
+        document.getElementById('import-modal').style.display = 'flex';
+    }
+    function closeImportModal() {
+        document.getElementById('import-modal').style.display = 'none';
+    }
+    function applyBulkImport() {
+        const raw = document.getElementById('import-modal-text').value;
+        const lines = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+        if (lines.length === 0) {
+            closeImportModal();
+            return;
+        }
+        lines.forEach((line, idx) => {
+            let name = line;
+            let task = `Варіант №${studentCards.length + 1}`;
+            if (line.includes('|')) {
+                const parts = line.split('|');
+                name = parts[0].trim();
+                task = parts.slice(1).join('|').trim() || task;
+            }
+            if (name.length > 0) {
+                studentCards.push({
+                    id: 'st_' + Date.now() + '_' + Math.floor(Math.random() * 10000) + '_' + idx,
+                    name: name,
+                    task: task,
+                    active: false
+                });
+            }
+        });
+        syncCardStateToGlobals();
+        broadcastState();
+        renderTeacherMatrix();
+        closeImportModal();
+        showNotification(`Створено ${lines.length} карток студентів.`, false);
+    }
+    function updateMatrixCounts() {
+        let activeCount = studentCards.filter(c => c.active).length;
+        const activeCountEl = document.getElementById('matrix-active-count');
+        const totalCountEl = document.getElementById('matrix-total-count');
+        if (activeCountEl) activeCountEl.innerText = `${activeCount} активно`;
+        if (totalCountEl) totalCountEl.innerText = `Всього: ${studentCards.length}`;
+    }
+    function renderTeacherMatrix() {
+        const grid = document.getElementById('teacher-matrix-grid');
+        if (!grid) return;
+        updateMatrixCounts();
+        if (studentCards.length === 0) {
+            grid.innerHTML = `
+            <div style="grid-column: 1/-1; color: #64748b; text-align: center; padding: 40px 20px; font-size: 0.9rem; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                <i data-lucide="layout-grid" style="width: 48px; height: 48px; stroke-width: 1.5; color: #94a3b8;"></i>
+                <div><b>Матриця порожня.</b> Додайте студентів та завдання для початку іспиту.</div>
+                <div style="display:flex; gap: 8px; margin-top: 5px;">
+                    <button class="btn-add-card" onclick="addStudentCard('','')">
+                        <i data-lucide="plus"></i> Додати першу картку
+                    </button>
+                    <button class="icon-btn" onclick="openImportModal()">
+                        <i data-lucide="file-text"></i> Вставити списком
+                    </button>
+                </div>
+            </div>`;
+            lucide.createIcons();
+            return;
+        }
+        let html = '';
+        const now = Date.now();
+        studentCards.forEach(c => {
+            const stName = c.name.trim();
+            const peerId = stName ? Object.keys(studentClaims).find(k => studentClaims[k] === stName) : null;
+            const clientConn = peerId ? connections.find(conn => conn.id === peerId) : null;
+            const isOnline = !!clientConn && (now - clientConn.lastPong < 10000);
+            const handRaised = clientConn ? clientConn.handRaised : false;
+            const violations = peerId ? (studentViolations[peerId] || 0) : 0;
+            const isActive = !!c.active;
+            const escapedName = escapeHtml(c.name);
+            const escapedTask = escapeHtml(c.task);
+            const timerInfo = cardTimers[c.id];
+            const timerBadge = (isActive && timerInfo) ? `<span id="timer-badge-${c.id}" class="badge badge-warn" style="font-size:0.68rem;">⏳ ${timerInfo.remaining}с</span>` : '';
+            html += `
+            <div class="student-card ${isActive ? 'active-task' : ''} ${isOnline ? 'online' : ''}">
+                <div class="student-card-header">
+                    <span class="status-dot ${isOnline ? 'online' : 'offline'}" title="${isOnline ? 'Онлайн' : 'Очікує підключення'}"></span>
+                    <input type="text" class="student-name-input" id="name-input-${c.id}" 
+                           value="${escapedName}" 
+                           placeholder="ПІБ студента..." 
+                           oninput="updateCardName('${c.id}', this.value)" 
+                           onkeydown="if(event.key==='Enter') this.blur()">
+                    <button class="btn-card-icon" onclick="deleteStudentCard('${c.id}')" title="Видалити картку">
+                        <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                    </button>
+                </div>
+                <textarea class="student-card-task" 
+                          placeholder="Текст завдання або питання..." 
+                          oninput="updateCardTask('${c.id}', this.value)">${escapedTask}</textarea>
+                <div class="student-card-footer">
+                    <div style="display:flex; gap: 4px; align-items:center; flex-wrap: wrap;">
+                        ${timerBadge}
+                        ${violations > 0 ? `<span class="badge badge-warn" title="Підозр: ${violations}">⚠️ ${violations}</span>` : ''}
+                        ${handRaised ? `<span style="color:#f59e0b; font-size: 0.9rem;" title="Піднято руку">✋</span>` : ''}
+                        ${peerId ? '<span class="badge badge-ok" style="font-size:0.65rem;" title="Студент закріплений">Закріплено</span>' : '<span class="badge badge-wait" style="font-size:0.65rem;">Вільний</span>'}
+                    </div>
+                    <button class="btn-matrix-toggle ${isActive ? 'btn-matrix-deactivate' : 'btn-matrix-activate'}" onclick="toggleCardActivation('${c.id}')">
+                        ${isActive ? '<i data-lucide="square" style="width:12px;height:12px;"></i> Зупинити' : '<i data-lucide="play" style="width:12px;height:12px;"></i> Активувати'}
+                    </button>
+                </div>
+            </div>`;
+        });
+        grid.innerHTML = html;
+        lucide.createIcons();
+    }
+    async function sendTaskToStudent(stName, duration) {
+        if (!stName) return;
+        const peerId = Object.keys(studentClaims).find(k => studentClaims[k] === stName);
+        if (!peerId) return;
+        const isActive = !!activeStudentTasks[stName];
+        const payload = {
+            type: 'INDIVIDUAL_TASK',
+            name: stName,
+            task: isActive ? (studentTasks[stName] || '') : '',
+            active: isActive,
+            duration: duration || null
+        };
+        const client = connections.find(c => c.id === peerId);
+        if (client && client.conn && client.conn.open) {
+            const enc = await encryptPayload(payload);
+            client.conn.send(enc);
+        }
+        if (useProxy && myIdRaw) {
+            sendViaProxy(myIdRaw, 'host', peerId, payload);
+        }
+    }
+    function escapeHtml(str) {
+        return (str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
+    function showWaitingForTeacherApproval(isPresOnly = false) {
+        document.getElementById('student-identity-menu').classList.add('hidden');
+        document.getElementById('listener-menu').classList.add('hidden');
+        document.getElementById('student-task-card').classList.add('hidden');
+        document.getElementById('loading-menu').classList.remove('hidden');
+        document.getElementById('loading-msg').innerHTML = isPresOnly
+            ? 'Очікування початку презентації...<br><span style="font-size:0.8rem; font-weight:500; color:#666; margin-top:8px; display:block;">Викладач обирає слайди. Презентація відкриється автоматично.</span>'
+            : 'Очікування формування списку викладачем...<br><span style="font-size:0.8rem; font-weight:500; color:#666; margin-top:8px; display:block;">Викладач готує матрицю групи. Список для вибору з\'явиться автоматично.</span>';
+    }
+    function showStudentClaimMenu(students, claims) {
+        document.getElementById('loading-menu').classList.add('hidden');
+        document.getElementById('student-task-card').classList.add('hidden');
+        const menu = document.getElementById('student-identity-menu');
+        menu.classList.remove('hidden');
+        const select = document.getElementById('student-select');
+        select.innerHTML = '<option value="" disabled selected>-- Оберіть своє прізвище зі списку --</option>';
+        const claimedNames = Object.values(claims || {});
+        students.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            if (claimedNames.includes(name) && name !== myStudentName) {
+                opt.textContent = name + ' [ВЖЕ ОБРАНО]';
+                opt.disabled = true;
+            } else {
+                opt.textContent = name;
+            }
+            select.appendChild(opt);
+        });
+    }
+    function confirmStudentIdentity(overrideName) {
+        const select = document.getElementById('student-select');
+        const chosen = overrideName || (select ? select.value : "");
+        if (!chosen) return showNotification("Будь ласка, оберіть своє прізвище зі списку!", true);
+        myStudentName = chosen;
+        sessionStorage.setItem('examsync_student_name', chosen);
+        const claimMsg = {
+            type: 'CLAIM_IDENTITY',
+            name: chosen,
+            clientId: myProxyClientId
+        };
+        if (useProxy && currentHostId) {
+            sendViaProxy(currentHostId, myProxyClientId, 'host', claimMsg);
+        }
+        if (hostConnection && hostConnection.open) {
+            encryptPayload(claimMsg).then(enc => hostConnection.send(enc));
+        }
+        document.getElementById('loading-msg').innerText = "Підтвердження викладачем...";
+        document.getElementById('student-identity-menu').classList.add('hidden');
+        document.getElementById('loading-menu').classList.remove('hidden');
+        startForensicWatermarking();
+        if (claimRetryTimer) clearInterval(claimRetryTimer);
+        let retries = 0;
+        claimRetryTimer = setInterval(() => {
+            retries++;
+            if (!document.getElementById('student-task-card').classList.contains('hidden') || retries > 6) {
+                clearInterval(claimRetryTimer);
+                claimRetryTimer = null;
+                return;
+            }
+            if (useProxy && currentHostId) sendViaProxy(currentHostId, myProxyClientId, 'host', claimMsg);
+        }, 1200);
+    }
+    function applyStudentTaskState() {
+        const loadingMenuEl = document.getElementById('loading-menu');
+        const taskCardEl = document.getElementById('student-task-card');
+        const identityMenuEl = document.getElementById('student-identity-menu');
+        const statusBadge = document.getElementById('st-status-badge');
+        const modalStatusBadge = document.getElementById('modal-status-badge');
+        const taskBtn = document.getElementById('btn-my-task');
+        loadingMenuEl.classList.add('hidden');
+        identityMenuEl.classList.add('hidden');
+        taskCardEl.classList.remove('hidden');
+        document.getElementById('st-badge-name').innerText = myStudentName;
+        renderStudentSharePanel();
+        startForensicWatermarking();
+        renderTaskToSecureCanvas('st-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
+        renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
+        if (isMyTaskActive) {
+            if (statusBadge) {
+                statusBadge.innerText = "Завдання активовано";
+                statusBadge.className = "badge badge-ok";
+            }
+            if (modalStatusBadge) {
+                modalStatusBadge.innerText = "Активовано";
+                modalStatusBadge.className = "badge badge-ok";
+            }
+            if (taskBtn) {
+                taskBtn.classList.remove('task-inactive');
+                taskBtn.title = "Переглянути активне завдання";
+            }
+        } else {
+            if (statusBadge) {
+                statusBadge.innerText = "Очікування викладача";
+                statusBadge.className = "badge badge-wait";
+            }
+            if (modalStatusBadge) {
+                modalStatusBadge.innerText = "Очікування";
+                modalStatusBadge.className = "badge badge-wait";
+            }
+            if (taskBtn) {
+                taskBtn.classList.add('task-inactive');
+                taskBtn.title = "Завдання очікує активації";
+            }
+        }
+    }
+    function triggerStudentTaskRefresh() {
+        const btn = document.getElementById('btn-student-task-resync');
+        const icon = btn ? btn.querySelector('i') : null;
+        if (icon) icon.classList.add('spin');
+        const reqMsg = {
+            type: 'STUDENT_TASK_RESYNC_REQ',
+            name: myStudentName,
+            clientId: myProxyClientId
+        };
+        if (useProxy && currentHostId) {
+            sendViaProxy(currentHostId, myProxyClientId, 'host', reqMsg);
+        }
+        if (hostConnection && hostConnection.open) {
+            encryptPayload(reqMsg).then(enc => hostConnection.send(enc));
+        }
+        setTimeout(() => { if (icon) icon.classList.remove('spin'); }, 800);
+    }
+    function updateStudentTimerUI(sec) {
+        const badge = document.getElementById('st-timer-badge');
+        const modalBadge = document.getElementById('modal-timer-badge');
+        if (sec !== null && sec > 0) {
+            if (badge) {
+                badge.innerText = `⏳ ${sec}с`;
+                badge.classList.remove('hidden');
+            }
+            if (modalBadge) {
+                modalBadge.innerText = `⏳ ${sec}с`;
+                modalBadge.classList.remove('hidden');
+            }
+        } else if (sec === 0) {
+            if (badge) badge.innerText = `Час вийшов`;
+            if (modalBadge) modalBadge.innerText = `Час вийшов`;
+        } else {
+            if (badge) badge.classList.add('hidden');
+            if (modalBadge) modalBadge.classList.add('hidden');
+        }
+    }
+    function toggleTaskModal() {
+        const modal = document.getElementById('task-modal');
+        const isOpening = modal.style.display !== 'flex';
+        modal.style.display = isOpening ? 'flex' : 'none';
+        if (isOpening) {
+            renderTaskToSecureCanvas('modal-task-canvas', myIndividualTask, myStudentName, isMyTaskActive);
+        }
+    }
+    function renderStudentSharePanel() {
+        if (isLeader || !currentHostId) return;
+        const panel = document.getElementById('student-share-panel');
+        if (!panel) return;
+        panel.classList.remove('hidden');
+        document.body.classList.add('student-connected');
+        const qrBox = document.getElementById('student-qr-container');
+        qrBox.innerHTML = '';
+        const baseUrl = window.location.href.split('?')[0];
+        const fullUrl = `${baseUrl}?host=${currentHostId}&proxy=${useProxy ? 1 : 0}`;
+        new QRCode(qrBox, {
+            text: fullUrl,
+            width: 120,
+            height: 120,
+            colorDark: "#000000"
+        });
+        const idEl = document.getElementById('student-share-id-display');
+        if (idEl) idEl.innerText = formatId(currentHostId);
+        lucide.createIcons();
+    }
+    function initLockInterface() {
+        for (let i = 0; i < 7; i++) setupRotaryLock(i);
+        updateLockCursorUI();
+        updateManualInput();
+        lucide.createIcons();
+    }
+    function updateLockCursorUI() {
+        for (let i = 0; i < 7; i++) {
+            const el = document.getElementById('d' + i);
+            if (!el) continue;
+            el.querySelector('span').innerText = lockDigits[i];
+            if (i === keypadCursor && keypadCursor < 7) {
+                el.classList.add('active-cursor');
+            } else {
+                el.classList.remove('active-cursor');
+            }
+        }
+    }
+    function keypadInput(digit) {
+        if (keypadCursor >= 7) return;
+        lockDigits[keypadCursor] = digit;
+        keypadCursor++;
+        updateLockCursorUI();
+        updateManualInput();
+    }
+    function keypadBackspace() {
+        if (keypadCursor > 0) {
+            keypadCursor--;
+            lockDigits[keypadCursor] = 0;
+        } else {
+            for (let i = 6; i >= 0; i--) {
+                if (lockDigits[i] !== 0) {
+                    lockDigits[i] = 0;
+                    break;
+                }
+            }
+        }
+        updateLockCursorUI();
+        updateManualInput();
+    }
+    function keypadClear() {
+        for (let i = 0; i < 7; i++) lockDigits[i] = 0;
+        keypadCursor = 0;
+        updateLockCursorUI();
+        updateManualInput();
+    }
+    function resetLockCode() {
+        keypadClear();
+    }
+    function triggerKeyboard() {
+        const inp = document.getElementById('ghost-input');
+        if(inp) {
+            inp.focus();
+            document.getElementById('lock-container').classList.add('focused');
+        }
+    }
+    function initManualInputListener() {
+        const inp = document.getElementById('ghost-input');
+        if(!inp) return;
+        inp.addEventListener('blur', () => {
+            document.getElementById('lock-container').classList.remove('focused');
+        });
+        inp.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                joinExamSession();
+            }
+        });
+        inp.addEventListener('input', (e) => {
+            const val = e.target.value.replace(/\D/g, '').slice(0, 7);
+            if (e.target.value !== val) e.target.value = val;
+            for(let i=0; i<7; i++) {
+                lockDigits[i] = (i < val.length) ? parseInt(val[i], 10) : 0;
+            }
+            keypadCursor = val.length;
+            updateLockCursorUI();
+        });
+    }
+    function updateManualInput() {
+        const inp = document.getElementById('ghost-input');
+        if(inp) inp.value = lockDigits.slice(0, keypadCursor).join('');
+    }
+    function setupRotaryLock(index) {
+        const el = document.getElementById('d' + index);
+        if (!el) return;
+        el.querySelector('span').innerText = lockDigits[index];
+        let startY = 0;
+        let isDragging = false;
+        const sensitivity = 25;
+        el.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+            isDragging = true;
+        }, {passive: false});
+        el.addEventListener('touchmove', (e) => {
+            if(!isDragging) return;
+            const delta = startY - e.touches[0].clientY;
+            if (Math.abs(delta) > 5) e.preventDefault(); 
+            if (Math.abs(delta) > sensitivity) {
+                changeDigit(index, delta > 0 ? 1 : -1);
+                startY = e.touches[0].clientY; 
+            }
+        }, {passive: false});
+        el.addEventListener('touchend', () => { isDragging = false; });
+        el.addEventListener('mousedown', (e) => {
+            startY = e.clientY;
+            isDragging = true;
+            el.style.cursor = 'grabbing';
+        });
+        window.addEventListener('mousemove', (e) => {
+            if(!isDragging) return;
+            const delta = startY - e.clientY;
+            if (Math.abs(delta) > sensitivity) {
+                changeDigit(index, delta > 0 ? 1 : -1);
+                startY = e.clientY;
+            }
+        });
+        window.addEventListener('mouseup', () => { 
+            isDragging = false; 
+            el.style.cursor = 'grab';
+        });
+        el.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            changeDigit(index, e.deltaY > 0 ? 1 : -1);
+        }, {passive: false});
+    }
+    function changeDigit(index, delta) {
+        lockDigits[index] = (lockDigits[index] + delta + 10) % 10;
+        if (index === keypadCursor && keypadCursor < 7) {
+            keypadCursor++;
+        }
+        updateLockCursorUI();
+        updateManualInput();
+    }
+    function getLockCode() {
+        return lockDigits.join('');
+    }
+    document.addEventListener('paste', (e) => {
+        if(document.getElementById('listener-menu').classList.contains('hidden')) return;
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text');
+        handlePasteText(text);
+    });
+    function handlePasteText(text) {
+        if (!text) return;
+        let numbers = text.replace(/\D/g, ''); 
+        if (text.includes('host=')) {
+            const match = text.match(/host=([0-9\s-]+)/);
+            if (match && match[1]) numbers = match[1].replace(/\D/g, '');
+        }
+        if (numbers.length > 0) {
+            numbers = numbers.slice(0, 7);
+            for (let i = 0; i < 7; i++) {
+                lockDigits[i] = (i < numbers.length) ? parseInt(numbers[i], 10) : 0;
+            }
+            keypadCursor = Math.min(numbers.length, 7);
+            updateLockCursorUI();
+            updateManualInput();
+            const btn = document.querySelector('button[onclick="pasteId()"]');
+            if(btn) {
+                const origHtml = btn.innerHTML;
+                btn.innerHTML = `<i data-lucide="check"></i> Вставлено`;
+                btn.classList.add('btn-success');
+                lucide.createIcons();
+                setTimeout(() => {
+                    btn.innerHTML = origHtml;
+                    btn.classList.remove('btn-success');
+                    lucide.createIcons();
+                }, 1500);
+            }
+        }
+    }
+    async function copyId() {
+        const code = myIdRaw || currentHostId;
+        if(!code) return;
+        const link = window.location.href.split('?')[0] + '?host=' + code + '&proxy=' + (useProxy ? 1 : 0);
+        try {
+            await navigator.clipboard.writeText(link);
+            document.querySelectorAll('.icon-btn').forEach(btn => {
+                if(btn.innerText.includes('Коп')) {
+                    const originalHtml = btn.innerHTML;
+                    btn.innerHTML = `<i data-lucide="check"></i> Готово`;
+                    btn.className = "icon-btn btn-success";
+                    lucide.createIcons();
+                    setTimeout(() => {
+                        btn.innerHTML = originalHtml;
+                        btn.className = "icon-btn";
+                        lucide.createIcons();
+                    }, 2000);
+                }
+            });
+        } catch (err) {}
+    }
+    async function shareId() {
+        const code = myIdRaw || currentHostId;
+        if(!code) return;
+        const link = window.location.href.split('?')[0] + '?host=' + code + '&proxy=' + (useProxy ? 1 : 0);
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'ExamSync',
+                    text: 'Приєднання до іспиту (Код: ' + formatId(code) + ')',
+                    url: link
+                });
+            } catch (err) { }
+        } else {
+            copyId();
+            showNotification("Посилання скопійовано у буфер обміну.", false);
+        }
+    }
+    async function pasteId() {
+        try {
+            const text = await navigator.clipboard.readText();
+            handlePasteText(text);
+        } catch (err) {
+            showNotification("Не вдалося отримати доступ до буферу обміну.", true);
+        }
+    }
+    function resetInputColor() {
+        const input = document.getElementById('gdrive-input');
+        input.classList.remove('input-success');
+        input.classList.remove('input-error');
+    }
+    function forceReload() { restartSession(); }
+    async function triggerResync() {
+        const btnIcon = document.querySelector('.btn-inner i[data-lucide="refresh-cw"]');
+        if(btnIcon) btnIcon.classList.add('spin');
+        const reqMsg = { type: 'RESYNC_REQ', clientId: myProxyClientId, name: myStudentName };
+        if (useProxy && currentHostId) {
+            sendViaProxy(currentHostId, myProxyClientId, 'host', reqMsg);
+        }
+        if (hostConnection && hostConnection.open) {
+            encryptPayload(reqMsg).then(enc => hostConnection.send(enc));
+        }
+        setTimeout(() => { if(btnIcon) btnIcon.classList.remove('spin'); }, 1000);
+    }
+    function showNotification(msg, isError = false) {
+        const modal = document.getElementById('notification-modal');
+        const title = document.getElementById('notif-title');
+        const body = document.getElementById('notif-body');
+        const icon = modal.querySelector('i');
+        if (isError) {
+            title.innerText = "Помилка";
+            icon.setAttribute('data-lucide', 'alert-circle');
+            modal.querySelector('.modal-content').style.borderColor = 'var(--color-attention-high)';
+            title.style.color = 'var(--color-attention-high)';
+            icon.style.color = 'var(--color-attention-high)';
+        } else {
+            title.innerText = "Інформація";
+            icon.setAttribute('data-lucide', 'info');
+            modal.querySelector('.modal-content').style.borderColor = 'var(--color-attention-med)';
+            title.style.color = 'var(--color-attention-med)';
+            icon.style.color = 'var(--color-attention-med)';
+        }
+        body.innerText = msg;
+        lucide.createIcons();
+        modal.style.display = 'flex';
+    }
+    function closeNotification() { document.getElementById('notification-modal').style.display = 'none'; }
+    function enterFullScreen() {
+        document.body.classList.add('fullscreen-mode');
+        const el = document.documentElement;
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        else if (el.msRequestFullscreen) el.msRequestFullscreen();
+        setTimeout(() => { if(pdfDoc) { clearDrawings(false); renderPage(pageNum); } }, 200);
+    }
+    function exitFullScreen() {
+        document.body.classList.remove('fullscreen-mode');
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
+        setTimeout(() => { if(pdfDoc) { clearDrawings(false); renderPage(pageNum); } }, 200);
+    }
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+            document.body.classList.remove('fullscreen-mode');
+            if(pdfDoc) { clearDrawings(false); renderPage(pageNum); }
+        }
+    });
+    function updateToolbarForRole() {
+        const spkBtns = document.querySelectorAll('.spk-only');
+        const lstBtns = document.querySelectorAll('.lst-only');
+        if (isLeader) {
+            spkBtns.forEach(el => el.classList.remove('hidden'));
+            lstBtns.forEach(el => el.classList.add('hidden'));
+            document.getElementById('zone-prev').style.display = 'block';
+            document.getElementById('zone-next').style.display = 'block';
+        } else {
+            spkBtns.forEach(el => el.classList.add('hidden'));
+            lstBtns.forEach(el => el.classList.remove('hidden'));
+            document.getElementById('zone-prev').style.display = 'none';
+            document.getElementById('zone-next').style.display = 'none';
+        }
+    }
+    function setupListener() {
+        document.getElementById('role-menu').classList.add('hidden');
+        document.getElementById('listener-menu').classList.remove('hidden');
+        isLeader = false;
+        resetLockCode();
+        updateToolbarForRole();
+        setTimeout(() => {
+            if(html5QrcodeScanner) { 
+                try { html5QrcodeScanner.clear(); } catch(e){} 
+                html5QrcodeScanner = null;
+            }
+            const readerEl = document.getElementById('reader');
+            if (readerEl) readerEl.innerHTML = '';
+            html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+                fps: 10, 
+                qrbox: { width: 180, height: 180 },
+                showTorchButtonIfSupported: true
+            }, false);
+            html5QrcodeScanner.render(onScanSuccess, () => {});
+        }, 300);
+    }
+    function onScanSuccess(decodedText) {
+        let hostId = decodedText;
+        let p = null;
+        let pxy = null;
+        try {
+            const url = new URL(decodedText);
+            const params = new URLSearchParams(url.search);
+            if(params.get('host')) hostId = params.get('host');
+            if(params.get('p')) p = params.get('p');
+            if(params.get('proxy') !== null) pxy = (params.get('proxy') === '1');
+        } catch(e) {}
+        if (pxy !== null) useProxy = pxy;
+        if(html5QrcodeScanner) {
+             const scannerRef = html5QrcodeScanner;
+             html5QrcodeScanner = null;
+             scannerRef.clear().then(() => {
+                 joinExamSession(hostId, p);
+             }).catch(() => {
+                 joinExamSession(hostId, p);
+             });
+        } else {
+            joinExamSession(hostId, p);
+        }
+    }
+    function normalizePresentationUrl(url) {
+        if (!url) return null;
+        url = url.trim();
+        if (url.includes('drive.usercontent.google.com')) return url;
+        if (url.includes('google.com')) {
+            const pathMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            const queryMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            const id = (pathMatch && pathMatch[1]) || (queryMatch && queryMatch[1]) || null;
+            const rkMatch = url.match(/[?&]resourcekey=([a-zA-Z0-9_-]+)/i);
+            const rk = rkMatch ? rkMatch[1] : null;
+            if (id) {
+                if (url.includes('presentation')) return `https://docs.google.com/presentation/d/${id}/export/pdf` + (rk ? `?resourcekey=${rk}` : '');
+                if (url.includes('document')) return `https://docs.google.com/document/d/${id}/export?format=pdf` + (rk ? `&resourcekey=${rk}` : '');
+                if (url.includes('spreadsheets')) return `https://docs.google.com/spreadsheets/d/${id}/export?format=pdf` + (rk ? `&resourcekey=${rk}` : '');
+                if (url.includes('view') || url.includes('open') || url.includes('/file/d/') || url.includes('uc')) {
+                    return `https://drive.usercontent.google.com/download?id=${id}&export=download&authuser=0&confirm=t` + (rk ? `&resourcekey=${rk}` : '');
+                }
+            }
+        }
+        if (url.includes('dropbox.com')) return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
+        if (url.includes('github.com') && url.includes('/blob/')) return url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+        if (url.includes('onedrive.live.com') || url.includes('1drv.ms')) {
+            return url.includes('download=1') ? url : (url.includes('?') ? url + '&download=1' : url + '?download=1');
+        }
+        return url;
+    }
+    function getOptimalScale(page) {
+        const availableWidth = container.clientWidth - 20; 
+        const availableHeight = container.clientHeight - 20;
+        const viewport = page.getViewport({ scale: 1, rotation: rotation });
+        const scaleX = availableWidth / viewport.width;
+        const scaleY = availableHeight / viewport.height;
+        return Math.min(scaleX, scaleY) * (window.devicePixelRatio || 1);
+    }
+    async function renderPdf(source) {
+        if (typeof source === 'string' && (source.includes('.ppt') || source.includes('.pptx')) && !source.includes('google.com')) {
+            showNotification("PPT/PPTX напряму не підтримується. Використовуйте Google Презентації або експортуйте файл у PDF.", true);
+            return false;
+        }
+        const cMapUrl = 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/';
+        try {
+            const loadingTask = pdfjsLib.getDocument({
+                url: source,
+                cMapUrl: cMapUrl,
+                cMapPacked: true
+            });
+            pdfDoc = await loadingTask.promise;
+        } catch (directErr) {
+            if (typeof source === 'string' && /^https?:\/\//i.test(source)) {
+                const pdfBytes = await fetchPdfBufferViaCorsProxies(source);
+                if (pdfBytes) {
+                    try {
+                        const fallbackTask = pdfjsLib.getDocument({
+                            data: pdfBytes,
+                            cMapUrl: cMapUrl,
+                            cMapPacked: true
+                        });
+                        pdfDoc = await fallbackTask.promise;
+                    } catch (e2) {
+                        showNotification("Не вдалося завантажити PDF завдання.", true);
+                        return false;
+                    }
+                } else {
+                    showNotification("Не вдалося завантажити PDF завдання. Перевірте доступ (Усі, хто має посилання) та формат файлу (PDF або Google Презентація).", true);
+                    return false;
+                }
+            } else {
+                showNotification("Не вдалося завантажити PDF завдання.", true);
+                return false;
+            }
+        }
+        const num = pdfDoc.numPages;
+        document.getElementById('page_count').textContent = num;
+        document.getElementById('fs_page_count').textContent = num;
+        renderPage(pageNum);
+        return true;
+    }
+    function renderPage(num) {
+        if(pdfDoc && num > pdfDoc.numPages) num = pdfDoc.numPages;
+        if(num < 1) num = 1;
+        pageNum = num;
+        pageRendering = true;
+        pdfDoc.getPage(num).then(page => {
+            const displayScale = getOptimalScale(page);
+            const viewport = page.getViewport({ scale: displayScale, rotation: rotation });
+            document.documentElement.style.setProperty('--landscape-rotation', rotation + 'deg');
+            pdfCanvas.height = viewport.height;
+            pdfCanvas.width = viewport.width;
+            drawCanvas.height = viewport.height;
+            drawCanvas.width = viewport.width;
+            drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round';
+            drawCtx.lineWidth = 4; drawCtx.strokeStyle = '#b80000'; 
+            const renderContext = { canvasContext: pdfCtx, viewport: viewport };
+            page.render(renderContext).promise.then(() => {
+                pageRendering = false;
+                redrawStoredLines(num);
+                if (pageNumPending !== null) {
+                    renderPage(pageNumPending);
+                    pageNumPending = null;
+                }
+            });
+        });
+        document.getElementById('page_num').textContent = num;
+        document.getElementById('fs_page_num').textContent = num;
+        if(isLeader) {
+            document.getElementById('prev').disabled = num <= 1;
+            document.getElementById('next').disabled = num >= pdfDoc.numPages;
+            updateQRCodes();
+        }
+        container.scrollTop = 0; 
+        container.scrollLeft = 0;
+    }
+    function queueRenderPage(num) {
+        if (pageRendering) pageNumPending = num; else renderPage(num);
+    }
+    async function toggleHand() {
+        if (handTimeout) { clearTimeout(handTimeout); handTimeout = null; }
+        myHandRaised = !myHandRaised;
+        const btn = document.getElementById('btn-hand');
+        if (myHandRaised) btn.classList.add('hand-active');
+        else btn.classList.remove('hand-active');
+        const fsBtn = document.getElementById('fs-hand');
+        if (myHandRaised) fsBtn.classList.add('fs-btn-active');
+        else fsBtn.classList.remove('fs-btn-active');
+        const handMsg = { type: 'HAND', value: myHandRaised, clientId: myProxyClientId };
+        if (useProxy && currentHostId) {
+            sendViaProxy(currentHostId, myProxyClientId, 'host', handMsg);
+        }
+        if (hostConnection && hostConnection.open) {
+            encryptPayload(handMsg).then(enc => hostConnection.send(enc));
+        }
+        if (myHandRaised) {
+            handTimeout = setTimeout(async () => {
+                myHandRaised = false;
+                document.getElementById('btn-hand').classList.remove('hand-active');
+                document.getElementById('fs-hand').classList.remove('fs-btn-active');
+                const cancelMsg = { type: 'HAND', value: false, clientId: myProxyClientId };
+                if (useProxy && currentHostId) sendViaProxy(currentHostId, myProxyClientId, 'host', cancelMsg);
+                if (hostConnection && hostConnection.open) {
+                    encryptPayload(cancelMsg).then(enc => hostConnection.send(enc));
+                }
+                handTimeout = null;
+            }, 10000);
+        }
+    }
+    function updateHandOverlay() {
+        if (!isLeader) return;
+        const count = connections.filter(c => c.handRaised).length;
+        const overlay = document.getElementById('hand-overlay');
+        const counter = document.getElementById('hand-count');
+        counter.innerText = count;
+        if (count > 0) overlay.classList.remove('hidden');
+        else overlay.classList.add('hidden');
+    }
+    function initDrawingListeners() {
+        drawCanvas.addEventListener('mousedown', startDrawing);
+        drawCanvas.addEventListener('mousemove', draw);
+        drawCanvas.addEventListener('mouseup', stopDrawing);
+        drawCanvas.addEventListener('mouseout', stopDrawing);
+        drawCanvas.addEventListener('touchstart', (e) => {
+            if(e.touches.length === 1) { e.preventDefault(); startDrawing(e.touches[0]); }
+        });
+        drawCanvas.addEventListener('touchmove', (e) => {
+            if(e.touches.length === 1) { e.preventDefault(); draw(e.touches[0]); }
+        });
+        drawCanvas.addEventListener('touchend', stopDrawing);
+    }
+    function getPos(e) {
+        const rect = drawCanvas.getBoundingClientRect();
+        return {
+            x: (e.clientX - rect.left) * (drawCanvas.width / rect.width),
+            y: (e.clientY - rect.top) * (drawCanvas.height / rect.height)
+        };
+    }
+    function startDrawing(e) {
+        if (!isLeader) return;
+        isDrawing = true;
+        const pos = getPos(e);
+        lastX = pos.x; lastY = pos.y;
+        performDraw(lastX, lastY, lastX, lastY, true);
+    }
+    function draw(e) {
+        if (!isDrawing || !isLeader) return;
+        const pos = getPos(e);
+        performDraw(lastX, lastY, pos.x, pos.y, true);
+        lastX = pos.x; lastY = pos.y;
+    }
+    function stopDrawing() { isDrawing = false; }
+    function performDraw(x0, y0, x1, y1, emit) {
+        const w = drawCanvas.width; const h = drawCanvas.height;
+        drawCtx.beginPath();
+        drawCtx.moveTo(x0, y0); drawCtx.lineTo(x1, y1); drawCtx.stroke();
+        if (emit && isLeader) {
+            const normCoords = [x0 / w, y0 / h, x1 / w, y1 / h];
+            if (!pageMarks[pageNum]) pageMarks[pageNum] = [];
+            pageMarks[pageNum].push(normCoords);
+            broadcast({ type: 'DRAW', coords: normCoords });
+        }
+    }
+    function receiveDraw(nx0, ny0, nx1, ny1) {
+        const w = drawCanvas.width; const h = drawCanvas.height;
+        if (!pageMarks[pageNum]) pageMarks[pageNum] = [];
+        pageMarks[pageNum].push([nx0, ny0, nx1, ny1]);
+        drawCtx.beginPath();
+        drawCtx.moveTo(nx0 * w, ny0 * h); drawCtx.lineTo(nx1 * w, ny1 * h); drawCtx.stroke();
+    }
+    function redrawStoredLines(pNum) {
+        if (!pageMarks[pNum]) return;
+        const w = drawCanvas.width; const h = drawCanvas.height;
+        drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round';
+        drawCtx.lineWidth = 4; drawCtx.strokeStyle = '#b80000';
+        drawCtx.beginPath();
+        pageMarks[pNum].forEach(line => {
+            drawCtx.moveTo(line[0] * w, line[1] * h);
+            drawCtx.lineTo(line[2] * w, line[3] * h);
+        });
+        drawCtx.stroke();
+    }
+    function clearDrawings(emit) {
+        drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+        if (emit) {
+            pageMarks[pageNum] = [];
+            if (isLeader) broadcast({ type: 'CLEAR' });
+        }
+    }
+    function onPrevPage() {
+        if (!pdfDoc || pageNum <= 1) return;
+        pageNum--;
+        clearDrawings(false);
+        queueRenderPage(pageNum);
+        if (isLeader) broadcast({ type: 'PAGE', value: pageNum });
+    }
+    function onNextPage() {
+        if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
+        pageNum++;
+        clearDrawings(false);
+        queueRenderPage(pageNum);
+        if (isLeader) broadcast({ type: 'PAGE', value: pageNum });
+    }
+    function onRotate() {
+        rotation = (rotation + 90) % 360;
+        clearDrawings(false); 
+        queueRenderPage(pageNum);
+    }
+    function toggleQR() {
+        const modal = document.getElementById('qr-modal');
+        modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+    }
+    function toggleRosterModal() {
+        const modal = document.getElementById('roster-modal');
+        modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+        updateTeacherRosterUI();
+    }
+    function formatId(id) {
+        if (!id) return "...";
+        const clean = String(id).replace(/\D/g, '');
+        if (clean.length === 7) return clean.replace(/(\d{3})(\d{4})/, "$1-$2");
+        return id;
+    }
+    function updateQRCodes() {
+        if(!myIdRaw) return;
+        const baseUrl = window.location.href.split('?')[0];
+        const fullUrl = `${baseUrl}?host=${myIdRaw}&p=${pageNum}&proxy=${useProxy ? 1 : 0}`;
+        document.getElementById("qr-container").innerHTML = "";
+        document.getElementById("qrcode-modal-tgt").innerHTML = "";
+        document.getElementById("qr-page-num").innerText = pageNum;
+        const fmtId = formatId(myIdRaw);
+        document.getElementById('meeting-id-display').innerText = fmtId;
+        document.getElementById('qr-modal-id').innerText = fmtId;
+        new QRCode(document.getElementById("qr-container"), { text: fullUrl, width: 140, height: 140, colorDark: "#000000" });
+        new QRCode(document.getElementById("qrcode-modal-tgt"), { text: fullUrl, width: 220, height: 220, colorDark: "#000000" });
+    }
+    function generateShortId() {
+        const min = 1000000;
+        const max = 9999999;
+        return Math.floor(Math.random() * (max - min + 1) + min).toString();
+    }
+    async function initLeader() {
+        isLeader = true;
+        isPresentationOnly = isMobileDevice();
+        if (isPresentationOnly) {
+            document.body.classList.add('mobile-teacher');
+            registeredStudents = [];
+            studentTasks = {};
+            activeStudentTasks = {};
+            studentsApproved = false;
+            const titleEl = document.getElementById('speaker-panel-title');
+            if (titleEl) titleEl.innerText = "Керування Презентацією";
+            const idLbl = document.getElementById('speaker-id-label');
+            if (idLbl) idLbl.innerText = "Код презентації";
+            const startBtn = document.getElementById('btn-start-sync');
+            if (startBtn) startBtn.innerText = "ПОЧАТИ ПРЕЗЕНТАЦІЮ";
+        } else {
+            document.body.classList.remove('mobile-teacher');
+        }
+        updateToolbarForRole();
+        document.getElementById('speaker-menu').classList.remove('hidden');
+        drawCanvas.style.pointerEvents = 'auto';
+        if (!isPresentationOnly) renderTeacherMatrix();
+        loadDriveFolderPresentations(false);
+        myIdRaw = generateShortId();
+        e2eeCryptoKey = await deriveE2EEKey(myIdRaw);
+        updateQRCodes();
+        document.getElementById('btn-start-sync').disabled = false;
+        if (useProxy) {
+            startProxyPolling(myIdRaw, 'host', handleLeaderIncomingMessage);
+        }
+        if (peer) {
+            try { peer.destroy(); } catch(e) {}
+            peer = null;
+        }
+        const peerJsId = APP_PREFIX + myIdRaw;
+        peer = new Peer(peerJsId);
+        peer.on('error', (err) => {
+            if (!isLeader) return;
+            if(err.type === 'unavailable-id') {
+                peer.destroy();
+                setTimeout(initLeader, 200);
+            }
+        });
+        if (leaderKeepAliveInterval) {
+            clearInterval(leaderKeepAliveInterval);
+            leaderKeepAliveInterval = null;
+        }
+        leaderKeepAliveInterval = setInterval(() => {
+            if(!isLeader) return;
+            const now = Date.now();
+            const beforeCount = connections.length;
+            connections = connections.filter(c => (now - c.lastPong) < 15000);
+            if(connections.length !== beforeCount) {
+                updateClientList();
+                updateHandOverlay();
+            }
+            if (!isPresentationOnly) renderTeacherMatrix();
+            broadcastState();
+        }, 2500);
+        peer.on('connection', conn => {
+            if (!isLeader) return;
+            connections = connections.filter(c => c.id !== conn.peer);
+            const client = { 
+                id: conn.peer, 
+                isProxy: false,
+                conn: conn, 
+                ready: false, 
+                handRaised: false,
+                lastPong: Date.now() 
+            };
+            connections.push(client);
+            updateClientList();
+            conn.on('open', async () => {
+                if (!isLeader) return;
+                const initMsg = {
+                    type: 'STATE_SYNC',
+                    presentationOnly: isPresentationOnly,
+                    approved: isPresentationOnly ? false : studentsApproved,
+                    students: isPresentationOnly ? [] : registeredStudents,
+                    claims: isPresentationOnly ? {} : studentClaims,
+                    tasks: isPresentationOnly ? {} : studentTasks,
+                    activeTasks: isPresentationOnly ? {} : activeStudentTasks,
+                    examStarted: examStarted,
+                    url: activeSourceUrl,
+                    page: pageNum
+                };
+                const enc = await encryptPayload(initMsg);
+                conn.send(enc);
+            });
+            conn.on('data', async raw => {
+                if (!isLeader) return;
+                const data = await decryptPayload(raw);
+                if (data) handleLeaderIncomingMessage(data, conn.peer, client);
+            });
+            conn.on('close', () => {
+                connections = connections.filter(c => c.conn !== conn);
+                updateClientList();
+                if (!isPresentationOnly) renderTeacherMatrix();
+                updateHandOverlay();
+            });
+        });
+    }
+    async function handleLeaderIncomingMessage(data, senderPeerId, directClient = null) {
+        if (!isLeader) return;
+        const effectiveId = data.clientId || senderPeerId;
+        let client = directClient || connections.find(c => c.id === effectiveId || c.id === senderPeerId);
+        if (!client) {
+            client = {
+                id: effectiveId,
+                isProxy: !directClient,
+                conn: directClient ? directClient.conn : null,
+                ready: false,
+                handRaised: false,
+                lastPong: Date.now()
+            };
+            connections.push(client);
+            updateClientList();
+        }
+        client.lastPong = Date.now();
+        if (data.type === 'PONG' || data.type === 'HELLO' || data.type === 'PING') {
+            if (data.hand !== undefined) client.handRaised = !!data.hand;
+            if (data.student && !studentClaims[effectiveId]) studentClaims[effectiveId] = data.student;
+            if (!isPresentationOnly) renderTeacherMatrix();
+            updateHandOverlay();
+            return; 
+        }
+        if (data.type === 'CLAIM_IDENTITY') {
+            const requestedName = (data.name || '').trim();
+            if (!requestedName) return;
+            const existingHolder = Object.keys(studentClaims).find(k => studentClaims[k] === requestedName);
+            if (existingHolder && existingHolder !== effectiveId && existingHolder !== senderPeerId) {
+                const existingConn = connections.find(c => c.id === existingHolder);
+                const isOnline = existingConn && (Date.now() - existingConn.lastPong < 10000);
+                if (isOnline) {
+                    sendDirectToPeer(effectiveId, { type: 'CLAIM_RESULT', success: false, msg: 'Це ім’я вже обрано іншим студентом онлайн!' });
+                    return;
+                }
+            }
+            studentClaims[effectiveId] = requestedName;
+            if (effectiveId !== senderPeerId) studentClaims[senderPeerId] = requestedName;
+            if (!studentViolations[effectiveId]) studentViolations[effectiveId] = 0;
+            const card = studentCards.find(c => c.name.trim() === requestedName);
+            const isActive = card ? !!card.active : !!activeStudentTasks[requestedName];
+            const remaining = (card && cardTimers[card.id]) ? cardTimers[card.id].remaining : null;
+            const taskText = card ? (card.task || studentTasks[requestedName] || '') : (studentTasks[requestedName] || '');
+            sendDirectToPeer(effectiveId, {
+                type: 'CLAIM_RESULT',
+                success: true,
+                name: requestedName,
+                task: taskText,
+                active: isActive,
+                duration: remaining
+            });
+            broadcastState();
+            if (!isPresentationOnly) renderTeacherMatrix();
+            if (examStarted) syncSingleClient(client);
+            return;
+        }
+        if (data.type === 'STUDENT_TASK_RESYNC_REQ') {
+            const stName = data.name || studentClaims[effectiveId] || studentClaims[senderPeerId];
+            if (stName) {
+                const card = studentCards.find(c => c.name.trim() === stName.trim());
+                const isActive = card ? !!card.active : !!activeStudentTasks[stName];
+                const remaining = (card && cardTimers[card.id]) ? cardTimers[card.id].remaining : null;
+                const taskText = card ? (card.task || studentTasks[stName] || '') : (studentTasks[stName] || '');
+                sendDirectToPeer(effectiveId, {
+                    type: 'INDIVIDUAL_TASK',
+                    name: stName,
+                    task: taskText,
+                    active: isActive,
+                    duration: remaining
+                });
+            }
+            if (examStarted) syncSingleClient(client);
+            return;
+        }
+        if (data.type === 'VIOLATION') {
+            studentViolations[effectiveId] = (studentViolations[effectiveId] || 0) + 1;
+            if (!isPresentationOnly) renderTeacherMatrix();
+            showNotification(`⚠️ УВАГА: Студент ${data.student || 'Невідомий'} порушив правила DRM (${data.reason})!`, true);
+            return;
+        }
+        if (data.type === 'ACK_READY') {
+            client.ready = true;
+            updateClientList();
+            if(examStarted) {
+                sendDirectToPeer(effectiveId, { type: 'PAGE', value: pageNum });
+                if(pageMarks[pageNum]) {
+                    pageMarks[pageNum].forEach(line => sendDirectToPeer(effectiveId, { type: 'DRAW', coords: line }));
+                }
+            }
+            return;
+        }
+        if (data.type === 'HAND') {
+            client.handRaised = !!data.value;
+            updateHandOverlay();
+            if (!isPresentationOnly) renderTeacherMatrix();
+            return;
+        }
+        if (data.type === 'RESYNC_REQ') {
+            sendDirectToPeer(effectiveId, { type: 'PAGE', value: pageNum });
+            if(pageMarks[pageNum]) {
+                pageMarks[pageNum].forEach(line => sendDirectToPeer(effectiveId, { type: 'DRAW', coords: line }));
+            }
+            broadcastState();
+            return;
+        }
+    }
+    async function sendDirectToPeer(peerId, obj) {
+        const client = connections.find(c => c.id === peerId);
+        if (client && client.conn && client.conn.open) {
+            const enc = await encryptPayload(obj);
+            client.conn.send(enc);
+        }
+        if (useProxy && myIdRaw) {
+            sendViaProxy(myIdRaw, 'host', peerId, obj);
+        }
+    }
+    function updateClientList() {
+        const count = connections.length;
+        document.getElementById('user-count-val').innerText = count;
+        document.getElementById('speaker-user-count').innerText = count + " онлайн";
+        const mobileBadge = document.getElementById('mobile-teacher-online-badge');
+        if (mobileBadge) mobileBadge.innerText = count + " онлайн";
+    }
+    function updateTeacherRosterUI() {
+        const modalContainer = document.getElementById('modal-roster-list');
+        if (!modalContainer) return;
+        let html = '';
+        if (studentCards.length === 0) {
+            html = '<div style="color: #888; text-align: center; padding: 12px; font-size: 0.8rem;">Картки студентів ще не створено.</div>';
+        } else {
+            const now = Date.now();
+            studentCards.forEach(c => {
+                const stName = c.name.trim();
+                if (!stName) return;
+                const peerId = Object.keys(studentClaims).find(k => studentClaims[k] === stName);
+                const clientConn = peerId ? connections.find(conn => conn.id === peerId) : null;
+                const isOnline = !!clientConn && (now - clientConn.lastPong < 10000);
+                const handRaised = clientConn ? clientConn.handRaised : false;
+                const violations = peerId ? (studentViolations[peerId] || 0) : 0;
+                let badge = '<span class="badge badge-wait">Очікує</span>';
+                if (isOnline) {
+                    badge = violations > 0 
+                        ? `<span class="badge badge-warn">⚠️ ${violations}</span>` 
+                        : `<span class="badge badge-ok">В мережі</span>`;
+                }
+                html += `
+                <div class="roster-row" style="display:flex; justify-content:space-between; align-items:center; padding: 8px 0; border-bottom: 1px solid #eee;">
+                    <div><b>${escapeHtml(stName)}</b> ${handRaised ? '✋' : ''} ${c.active ? '<span class="badge badge-ok" style="font-size:0.65rem;">Активно</span>' : ''}</div>
+                    <div>${badge}</div>
+                </div>`;
+            });
+        }
+        modalContainer.innerHTML = html;
+    }
+    async function startDistribution() {
+        resetInputColor();
+        const inputField = document.getElementById('gdrive-input');
+        const selectField = document.getElementById('drive-files-select');
+        let driveInput = inputField ? inputField.value.trim() : '';
+        if (!driveInput && selectField && selectField.value && selectField.value !== '__custom__') {
+            driveInput = selectField.value;
+        }
+        if (!driveInput) {
+            showNotification("Оберіть презентацію зі списку Google Drive або вставте посилання!", true);
+            if (inputField) inputField.classList.add('input-error');
+            return;
+        }
+        activeSourceUrl = normalizePresentationUrl(driveInput);
+        const lbl = document.getElementById('sync-status');
+        lbl.style.display = 'block';
+        document.getElementById('btn-start-sync').disabled = true;
+        const success = await renderPdf(activeSourceUrl);
+        if (success) {
+            inputField.classList.add('input-success');
+            lbl.style.display = 'none';
+            examStarted = true;
+            document.getElementById('ui-layer').classList.add('hidden');
+            if(html5QrcodeScanner) {
+                const scannerRef = html5QrcodeScanner;
+                html5QrcodeScanner = null;
+                try { Promise.resolve(scannerRef.clear()).catch(()=>{}); } catch(e){}
+            }
+            connections.forEach(c => syncSingleClient(c));
+            broadcastState();
+        } else {
+            inputField.classList.add('input-error');
+            lbl.style.display = 'none';
+            document.getElementById('btn-start-sync').disabled = false;
+        }
+    }
+    async function syncSingleClient(client) {
+        client.ready = false;
+        updateClientList();
+        const startMsg = { type: 'START_EXAM', url: activeSourceUrl };
+        if (client.conn && client.conn.open) {
+            const enc = await encryptPayload(startMsg);
+            client.conn.send(enc);
+        }
+        if (useProxy && myIdRaw) {
+            sendViaProxy(myIdRaw, 'host', client.id, startMsg);
+        }
+    }
+    function broadcastState() {
+        if (!isLeader || !myIdRaw) return;
+        broadcast({
+            type: 'STATE_SYNC',
+            page: pageNum,
+            presentationOnly: isPresentationOnly,
+            approved: isPresentationOnly ? false : studentsApproved,
+            students: isPresentationOnly ? [] : registeredStudents,
+            claims: isPresentationOnly ? {} : studentClaims,
+            tasks: isPresentationOnly ? {} : studentTasks,
+            activeTasks: isPresentationOnly ? {} : activeStudentTasks,
+            examStarted: examStarted,
+            url: activeSourceUrl
+        });
+    }
+    async function broadcast(msg) {
+        const enc = await encryptPayload(msg);
+        connections.forEach(c => { 
+            if(c.conn && c.conn.open) c.conn.send(enc); 
+        });
+        if (useProxy && myIdRaw) {
+            sendViaProxy(myIdRaw, 'host', 'all', msg);
+        }
+    }
+    async function joinExamSession(id, pageParam) {
+        let rawId = id || getLockCode();
+        rawId = String(rawId).trim();
+        if (rawId.startsWith(APP_PREFIX)) rawId = rawId.substring(APP_PREFIX.length);
+        const cleanId = rawId.replace(/[\s-]/g, '');
+        if (!cleanId || !/^\d{7}$/.test(cleanId) || cleanId === '0000000') {
+            if (document.getElementById('listener-menu').classList.contains('hidden')) {
+                document.getElementById('role-menu').classList.remove('hidden');
+            }
+            return showNotification("Введіть правильний 7-значний код сесії!", true);
+        }
+        const hostId = APP_PREFIX + cleanId;
+        currentHostId = cleanId;
+        e2eeCryptoKey = await deriveE2EEKey(currentHostId);
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?host=' + currentHostId + '&proxy=' + (useProxy ? 1 : 0);
+        try { window.history.replaceState({path: newUrl}, '', newUrl); } catch(e) {}
+        if(pageParam) pageNum = parseInt(pageParam);
+        document.getElementById('listener-menu').classList.add('hidden');
+        document.getElementById('loading-menu').classList.remove('hidden');
+        document.getElementById('loading-msg').innerText = "Підключення до сесії...";
+        isLeader = false;
+        updateToolbarForRole();
+        if(html5QrcodeScanner) {
+            const scannerRef = html5QrcodeScanner;
+            html5QrcodeScanner = null;
+            try { Promise.resolve(scannerRef.clear()).catch(()=>{}); } catch(e){}
+        }
+        if (useProxy) {
+            startProxyPolling(currentHostId, myProxyClientId, handleStudentIncomingMessage);
+            renderStudentSharePanel();
+            sendViaProxy(currentHostId, myProxyClientId, 'host', { 
+                type: 'HELLO',
+                clientId: myProxyClientId,
+                student: sessionStorage.getItem('examsync_student_name') || ''
+            });
+        }
+        if (peer) {
+            try { peer.destroy(); } catch(e) {}
+            peer = null;
+        }
+        peer = new Peer();
+        peer.on('open', () => {
+            if (isLeader || !currentHostId) return;
+            const conn = peer.connect(hostId, { reliable: true });
+            hostConnection = conn;
+            conn.on('open', () => {
+                if (isLeader || !currentHostId) return;
+                renderStudentSharePanel();
+                conn.send(JSON.stringify({ 
+                    type: 'HELLO', 
+                    clientId: myProxyClientId,
+                    student: sessionStorage.getItem('examsync_student_name') || ''
+                }));
+            });
+            conn.on('data', async raw => {
+                if (isLeader || !currentHostId) return;
+                const data = await decryptPayload(raw);
+                if (data) handleStudentIncomingMessage(data);
+            });
+        });
+        if (studentPingInterval) {
+            clearInterval(studentPingInterval);
+            studentPingInterval = null;
+        }
+        studentPingInterval = setInterval(() => {
+            if (isLeader || !currentHostId) return;
+            const pingMsg = {
+                type: 'PING',
+                clientId: myProxyClientId,
+                student: myStudentName || sessionStorage.getItem('examsync_student_name') || '',
+                hand: myHandRaised
+            };
+            if (useProxy) sendViaProxy(currentHostId, myProxyClientId, 'host', pingMsg);
+            if (hostConnection && hostConnection.open) {
+                encryptPayload(pingMsg).then(enc => hostConnection.send(enc));
+            }
+        }, 2500);
+    }
+    async function handleStudentIncomingMessage(data) {
+        if (isLeader || !currentHostId) return;
+        if (data.type === 'HEARTBEAT' || data.type === 'PING') {
+            const pongMsg = { type: 'PONG', clientId: myProxyClientId };
+            if (useProxy && currentHostId) sendViaProxy(currentHostId, myProxyClientId, 'host', pongMsg);
+            if (hostConnection && hostConnection.open) {
+                encryptPayload(pongMsg).then(enc => hostConnection.send(enc));
+            }
+            if(pdfDoc && !pageRendering && data.page && pageNum !== data.page) {
+                pageNum = data.page;
+                clearDrawings(false); 
+                queueRenderPage(pageNum);
+            }
+            return;
+        }
+        if (data.type === 'STATE_SYNC' || data.type === 'INIT_EXAM_INFO' || data.type === 'STUDENT_LIST_SYNC') {
+            studentsApproved = !!data.approved;
+            if (data.students) registeredStudents = data.students;
+            if (data.claims) studentClaims = data.claims;
+            if (data.tasks) studentTasks = data.tasks;
+            if (data.activeTasks) activeStudentTasks = data.activeTasks;
+            const savedName = sessionStorage.getItem('examsync_student_name');
+            if (!myStudentName && savedName && registeredStudents.includes(savedName)) {
+                myStudentName = savedName;
+                confirmStudentIdentity(savedName);
+            } else if (!myStudentName) {
+                if (studentsApproved && registeredStudents.length > 0) {
+                    showStudentClaimMenu(registeredStudents, studentClaims);
+                } else {
+                    showWaitingForTeacherApproval(!!data.presentationOnly);
+                }
+            } else {
+                const taskActive = !!activeStudentTasks[myStudentName];
+                const taskContent = studentTasks[myStudentName] || '';
+                if (taskActive !== isMyTaskActive || taskContent !== myIndividualTask) {
+                    isMyTaskActive = taskActive;
+                    myIndividualTask = taskContent;
+                    applyStudentTaskState();
+                }
+            }
+            if (data.examStarted && data.url && !examStarted) {
+                loadExamPdf(data.url);
+            }
+            if (data.page && pageNum !== data.page && pdfDoc && !pageRendering) {
+                pageNum = data.page;
+                clearDrawings(false);
+                queueRenderPage(pageNum);
+            }
+            return;
+        }
+        if (data.type === 'CLAIMS_UPDATE') {
+            studentClaims = data.claims || {};
+            if (!myStudentName && studentsApproved && registeredStudents.length > 0) {
+                showStudentClaimMenu(registeredStudents, studentClaims);
+            }
+            return;
+        }
+        if (data.type === 'CLAIM_RESULT') {
+            if (claimRetryTimer) {
+                clearInterval(claimRetryTimer);
+                claimRetryTimer = null;
+            }
+            if (data.success) {
+                myStudentName = data.name;
+                sessionStorage.setItem('examsync_student_name', myStudentName);
+                if (data.task !== undefined) myIndividualTask = data.task;
+                if (data.active !== undefined) isMyTaskActive = !!data.active;
+                applyStudentTaskState();
+                if (data.duration && isMyTaskActive) startStudentCountdown(data.duration);
+            } else {
+                showNotification(data.msg || "Помилка вибору імені", true);
+                if (studentsApproved && registeredStudents.length > 0) {
+                    showStudentClaimMenu(registeredStudents, studentClaims);
+                } else {
+                    showWaitingForTeacherApproval();
+                }
+            }
+            return;
+        }
+        if (data.type === 'INDIVIDUAL_TASK') {
+            isMyTaskActive = !!data.active;
+            myIndividualTask = data.task || '';
+            applyStudentTaskState();
+            if (data.duration && isMyTaskActive) startStudentCountdown(data.duration);
+            else updateStudentTimerUI(null);
+            return;
+        }
+        if (data.type === 'START_EXAM') {
+            loadExamPdf(data.url);
+            return;
+        }
+        if (data.type === 'PAGE') {
+            pageNum = data.value;
+            clearDrawings(false); 
+            if(pdfDoc) queueRenderPage(pageNum);
+            return;
+        }
+        if (data.type === 'DRAW') receiveDraw(data.coords[0], data.coords[1], data.coords[2], data.coords[3]);
+        if (data.type === 'CLEAR') clearDrawings(true);
+    }
+    async function loadExamPdf(url) {
+        document.getElementById('loading-msg').innerText = "Завантаження завдань екзамену...";
+        const ok = await renderPdf(url);
+        if(ok) {
+            const ack = { type: 'ACK_READY', clientId: myProxyClientId };
+            if (useProxy && currentHostId) sendViaProxy(currentHostId, myProxyClientId, 'host', ack);
+            if (hostConnection && hostConnection.open) {
+                encryptPayload(ack).then(enc => hostConnection.send(enc));
+            }
+            examStarted = true;
+            document.getElementById('ui-layer').classList.add('hidden');
+            const currentUrl = window.location.href.split('?')[0] + '?host=' + currentHostId + '&proxy=' + (useProxy ? 1 : 0);
+            document.getElementById('qr-modal-id').innerText = formatId(currentHostId);
+            document.getElementById("qrcode-modal-tgt").innerHTML = "";
+            new QRCode(document.getElementById("qrcode-modal-tgt"), { text: currentUrl, width: 220, height: 220, colorDark: "#000000" });
+            startForensicWatermarking();
+            renderStudentSharePanel();
+        }
+    }
+    function startStudentCountdown(seconds) {
+        if (studentCountdownInterval) {
+            clearInterval(studentCountdownInterval);
+            studentCountdownInterval = null;
+        }
+        let timeLeft = seconds;
+        updateStudentTimerUI(timeLeft);
+        studentCountdownInterval = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(studentCountdownInterval);
+                studentCountdownInterval = null;
+                updateStudentTimerUI(0);
+                isMyTaskActive = false;
+                applyStudentTaskState();
+            } else {
+                updateStudentTimerUI(timeLeft);
+            }
+        }, 1000);
+    }
+</script>
+</body>
+</html>
